@@ -35,15 +35,6 @@ export default function Header() {
 						variant="outline"
 						className="soft-button-surface hidden rounded-full sm:inline-flex"
 					>
-						<Link to="/$locale/new-game" params={{ locale }}>
-							{t("nav.newGame")}
-						</Link>
-					</Button>
-					<Button
-						asChild
-						variant="outline"
-						className="soft-button-surface hidden rounded-full sm:inline-flex"
-					>
 						<a
 							href="https://github.com/dxit/cluedo-solver"
 							target="_blank"

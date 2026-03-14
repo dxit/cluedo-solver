@@ -162,6 +162,24 @@ export const resources = {
 						"Only the envelope can still hold {{card}}.",
 					singleEnvelopeCandidate:
 						"{{card}} is the only remaining {{category}} candidate for the envelope.",
+					playerReachedMaxHand:
+						"{{player}} already reached the maximum hand size of {{handSize}}, so {{card}} cannot belong to them.",
+					playerReachedMinPossible:
+						"{{player}} must still hold {{handSize}} cards, so {{card}} is forced into their hand.",
+					handRangeForcedOwned:
+						"Across every valid hand for {{player}} ({{minHand}}-{{maxHand}} cards), {{card}} is always present.",
+					handRangeForcedImpossible:
+						"Across every valid hand for {{player}} ({{minHand}}-{{maxHand}} cards), {{card}} is never present.",
+				},
+				evidence: {
+					suggestion: "Based on suggestion entry {{index}}.",
+					cell: "{{card}} for {{column}} is already marked {{status}}.",
+					handSizeLimitMax:
+						"{{player}} already accounts for the maximum hand size of {{handSize}} cards.",
+					handSizeLimitMin:
+						"{{player}} must still account for {{handSize}} cards.",
+					handRange:
+						"{{player}} has {{count}} valid hands left within the {{minHand}}-{{maxHand}} card range.",
 				},
 				leads: {
 					disproverCandidates:
@@ -181,6 +199,12 @@ export const resources = {
 						"No {{category}} can still be placed in the envelope.",
 					suggestionDisproverHasNoCandidate:
 						"Entry {{index}} says {{player}} disproved the suggestion, but none of those cards can still belong to them.",
+					playerExceedsMaxHand:
+						"{{player}} is marked as owning {{count}} cards, which exceeds the maximum hand size of {{maxHand}}.",
+					playerBelowMinPossible:
+						"{{player}} can only still hold {{count}} possible cards, but must have at least {{minHand}}.",
+					playerHasNoValidHand:
+						"No valid hand remains for {{player}} within the {{minHand}}-{{maxHand}} card range.",
 				},
 			},
 			suggestion: {
@@ -426,21 +450,39 @@ export const resources = {
 				},
 				rules: {
 					suggestionSkippedPlayer:
-						"La voce {{index}} esclude {{player}} da {{card}} prima del giocatore che ha smentito.",
+						"Il turno {{index}} esclude {{player}} da {{card}} prima del giocatore che ha smentito.",
 					suggestionNoDisprover:
-						"La voce {{index}} esclude {{player}} da {{card}} perche nessuno ha smentito il suggerimento.",
+						"Il turno {{index}} esclude {{player}} da {{card}} perche nessuno ha smentito il suggerimento.",
 					disproverSingleCandidate:
-						"La voce {{index}} lascia a {{player}} solo {{card}} come possibile carta per smentire.",
+						"Il turno {{index}} lascia a {{player}} solo {{card}} come possibile carta per smentire.",
 					singlePossibleOwnerPlayer:
 						"Solo {{player}} puo ancora avere {{card}}.",
 					singlePossibleOwnerEnvelope:
 						"Solo la busta puo ancora contenere {{card}}.",
 					singleEnvelopeCandidate:
 						"{{card}} e l'unico {{category}} rimasto per la busta.",
+					playerReachedMaxHand:
+						"{{player}} ha gia raggiunto il massimo di {{handSize}} carte, quindi {{card}} non puo appartenergli.",
+					playerReachedMinPossible:
+						"{{player}} deve ancora avere {{handSize}} carte, quindi {{card}} entra forzatamente nella sua mano.",
+					handRangeForcedOwned:
+						"In ogni mano valida per {{player}} (da {{minHand}} a {{maxHand}} carte), {{card}} compare sempre.",
+					handRangeForcedImpossible:
+						"In ogni mano valida per {{player}} (da {{minHand}} a {{maxHand}} carte), {{card}} non compare mai.",
+				},
+				evidence: {
+					suggestion: "Basato sul turno {{index}}.",
+					cell: "{{card}} per {{column}} e gia segnata come {{status}}.",
+					handSizeLimitMax:
+						"{{player}} copre gia la dimensione massima della mano di {{handSize}} carte.",
+					handSizeLimitMin:
+						"{{player}} deve ancora coprire {{handSize}} carte.",
+					handRange:
+						"{{player}} ha ancora {{count}} mani valide nell'intervallo di {{minHand}}-{{maxHand}} carte.",
 				},
 				leads: {
 					disproverCandidates:
-						"La voce {{index}} significa che {{player}} deve avere una tra: {{cards}}.",
+						"Il turno {{index}} significa che {{player}} deve avere una tra: {{cards}}.",
 				},
 				conflicts: {
 					ruleConflictImpossible:
@@ -455,7 +497,13 @@ export const resources = {
 					noEnvelopeCandidate:
 						"Nessun {{category}} puo piu finire nella busta.",
 					suggestionDisproverHasNoCandidate:
-						"La voce {{index}} dice che {{player}} ha smentito il suggerimento, ma nessuna di quelle carte puo piu appartenergli.",
+						"Il turno {{index}} dice che {{player}} ha smentito il suggerimento, ma nessuna di quelle carte puo piu appartenergli.",
+					playerExceedsMaxHand:
+						"{{player}} risulta proprietario di {{count}} carte, oltre il massimo consentito di {{maxHand}}.",
+					playerBelowMinPossible:
+						"{{player}} puo ancora avere solo {{count}} carte possibili, ma deve averne almeno {{minHand}}.",
+					playerHasNoValidHand:
+						"Non esiste piu nessuna mano valida per {{player}} nell'intervallo {{minHand}}-{{maxHand}} carte.",
 				},
 			},
 			suggestion: {
@@ -466,7 +514,7 @@ export const resources = {
 				historyDescription: "Gli inserimenti piu recenti compaiono per primi.",
 				empty:
 					"Nessun suggerimento ancora. Aggiungi il primo dal modulo qui sopra.",
-				entry: "Voce {{index}}",
+				entry: "Turno {{index}}",
 				add: "Aggiungi suggerimento",
 				suggesterPlayer: "È il turno di",
 				suggesterPlaceholder: "Seleziona un giocatore",
@@ -712,6 +760,24 @@ export const resources = {
 						"Nur der Umschlag kann {{card}} noch enthalten.",
 					singleEnvelopeCandidate:
 						"{{card}} ist der einzige verbleibende {{category}}-Kandidat fur den Umschlag.",
+					playerReachedMaxHand:
+						"{{player}} hat bereits die maximale Handgrose von {{handSize}} Karten erreicht, daher kann {{card}} nicht dort liegen.",
+					playerReachedMinPossible:
+						"{{player}} muss noch {{handSize}} Karten halten, daher wird {{card}} erzwungen.",
+					handRangeForcedOwned:
+						"In jeder gultigen Hand fur {{player}} ({{minHand}}-{{maxHand}} Karten) ist {{card}} immer enthalten.",
+					handRangeForcedImpossible:
+						"In jeder gultigen Hand fur {{player}} ({{minHand}}-{{maxHand}} Karten) kommt {{card}} nie vor.",
+				},
+				evidence: {
+					suggestion: "Basiert auf Eintrag {{index}}.",
+					cell: "{{card}} fur {{column}} ist bereits als {{status}} markiert.",
+					handSizeLimitMax:
+						"{{player}} erreicht bereits die maximale Handgrose von {{handSize}} Karten.",
+					handSizeLimitMin:
+						"{{player}} muss noch {{handSize}} Karten abdecken.",
+					handRange:
+						"{{player}} hat noch {{count}} gultige Hande im Bereich von {{minHand}} bis {{maxHand}} Karten.",
 				},
 				leads: {
 					disproverCandidates:
@@ -732,6 +798,12 @@ export const resources = {
 						"Kein {{category}} kann mehr im Umschlag liegen.",
 					suggestionDisproverHasNoCandidate:
 						"Eintrag {{index}} sagt, dass {{player}} den Vorschlag widerlegt hat, aber keine dieser Karten kann noch zu dieser Person gehoren.",
+					playerExceedsMaxHand:
+						"{{player}} ist mit {{count}} Karten markiert und uberschreitet damit die maximale Handgrose von {{maxHand}}.",
+					playerBelowMinPossible:
+						"{{player}} kann nur noch {{count}} mogliche Karten halten, braucht aber mindestens {{minHand}}.",
+					playerHasNoValidHand:
+						"Fur {{player}} bleibt keine gultige Hand mehr im Bereich von {{minHand}} bis {{maxHand}} Karten.",
 				},
 			},
 			suggestion: {

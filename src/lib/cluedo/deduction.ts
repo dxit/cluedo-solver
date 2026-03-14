@@ -16,6 +16,44 @@ import type {
 type DeductionGame = Pick<Game, "notebook" | "players" | "suggestions">;
 type DeducedNotebookStatus = Exclude<NotebookStatus, "unknown">;
 
+type HandSizeInfo = {
+	min: number;
+	max: number;
+	exact: number | null;
+};
+
+type PlayerHandAnalysis = {
+	ownedCards: Card[];
+	possibleCards: Card[];
+	totalValidHands: number;
+	cardAppearanceCount: Record<Card, number>;
+};
+
+export type DeductionEvidence =
+	| {
+			kind: "suggestion";
+			suggestionNumber: number;
+	  }
+	| {
+			kind: "cell";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			status: DeducedNotebookStatus;
+	  }
+	| {
+			kind: "handSizeLimit";
+			playerId: string;
+			handSize: number;
+			reached: "maxOwned" | "minPossible";
+	  }
+	| {
+			kind: "handRange";
+			playerId: string;
+			minHand: number;
+			maxHand: number;
+			validHands: number;
+	  };
+
 export type DeductionStep =
 	| {
 			id: string;
@@ -27,6 +65,7 @@ export type DeductionStep =
 			playerId: string;
 			suggesterPlayerId: string;
 			disproverPlayerId: string | null;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -37,6 +76,7 @@ export type DeductionStep =
 			suggestionNumber: number;
 			playerId: string;
 			suggesterPlayerId: string;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -44,6 +84,7 @@ export type DeductionStep =
 			status: "owned";
 			card: Card;
 			columnKey: NotebookColumnKey;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -53,6 +94,7 @@ export type DeductionStep =
 			columnKey: NotebookColumnKey;
 			suggestionNumber: number;
 			playerId: string;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -61,6 +103,49 @@ export type DeductionStep =
 			card: Card;
 			columnKey: typeof envelopeColumnId;
 			category: CardCategory;
+			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			rule: "playerReachedMaxHand";
+			status: "impossible";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			playerId: string;
+			handSize: number;
+			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			rule: "playerReachedMinPossible";
+			status: "owned";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			playerId: string;
+			handSize: number;
+			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			rule: "handRangeForcedOwned";
+			status: "owned";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			playerId: string;
+			minHand: number;
+			maxHand: number;
+			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			rule: "handRangeForcedImpossible";
+			status: "impossible";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			playerId: string;
+			minHand: number;
+			maxHand: number;
+			evidence?: DeductionEvidence[];
 	  };
 
 export type DeductionLead = {
@@ -110,6 +195,27 @@ export type DeductionConflict =
 			suggestionNumber: number;
 			playerId: string;
 			cards: Card[];
+	  }
+	| {
+			id: string;
+			kind: "playerExceedsMaxHand";
+			playerId: string;
+			ownedCount: number;
+			maxHand: number;
+	  }
+	| {
+			id: string;
+			kind: "playerBelowMinPossible";
+			playerId: string;
+			possibleCount: number;
+			minHand: number;
+	  }
+	| {
+			id: string;
+			kind: "playerHasNoValidHand";
+			playerId: string;
+			minHand: number;
+			maxHand: number;
 	  };
 
 export type DeductionReasonState = Record<
@@ -129,6 +235,18 @@ export type DeductionResult = {
 
 function getColumnKeys(players: Player[]): NotebookColumnKey[] {
 	return [...players.map((player) => player.id), envelopeColumnId];
+}
+
+function getHandSizeInfo(playerCount: number): HandSizeInfo {
+	const dealtCards = allCards.length - 3;
+	const min = Math.floor(dealtCards / playerCount);
+	const max = Math.ceil(dealtCards / playerCount);
+
+	return {
+		min,
+		max,
+		exact: min === max ? min : null,
+	};
 }
 
 function createNotebookCopy(
@@ -232,12 +350,192 @@ function createRuleConflict(
 	};
 }
 
+function createSuggestionEvidence(
+	suggestionNumber: number,
+): DeductionEvidence[] {
+	return [{ kind: "suggestion", suggestionNumber }];
+}
+
+function createCardStatusEvidence(
+	notebook: NotebookState,
+	card: Card,
+	columnKeys: NotebookColumnKey[],
+	status: DeducedNotebookStatus,
+	excludedColumnKey?: NotebookColumnKey,
+): DeductionEvidence[] {
+	return columnKeys
+		.filter((columnKey) => columnKey !== excludedColumnKey)
+		.filter((columnKey) => notebook[card][columnKey] === status)
+		.map((columnKey) => ({
+			kind: "cell" as const,
+			card,
+			columnKey,
+			status,
+		}));
+}
+
+function createCategoryEnvelopeEvidence(
+	notebook: NotebookState,
+	categoryCards: readonly Card[],
+	targetCard: Card,
+	status: DeducedNotebookStatus,
+): DeductionEvidence[] {
+	return categoryCards
+		.filter((card) => card !== targetCard)
+		.filter((card) => notebook[card][envelopeColumnId] === status)
+		.map((card) => ({
+			kind: "cell" as const,
+			card,
+			columnKey: envelopeColumnId,
+			status,
+		}));
+}
+
+function createHandSizeLimitEvidence(
+	playerId: string,
+	handSize: number,
+	reached: "maxOwned" | "minPossible",
+): DeductionEvidence[] {
+	return [{ kind: "handSizeLimit", playerId, handSize, reached }];
+}
+
+function createHandRangeEvidence(
+	playerId: string,
+	minHand: number,
+	maxHand: number,
+	validHands: number,
+): DeductionEvidence[] {
+	return [
+		{
+			kind: "handRange",
+			playerId,
+			minHand,
+			maxHand,
+			validHands,
+		},
+	];
+}
+
+function getOwnedCardsForPlayer(
+	playerId: string,
+	notebook: NotebookState,
+): Card[] {
+	return allCards.filter((card) => notebook[card][playerId] === "owned");
+}
+
+function getPossibleCardsForPlayer(
+	playerId: string,
+	notebook: NotebookState,
+): Card[] {
+	return allCards.filter((card) => notebook[card][playerId] !== "impossible");
+}
+
+function analyzePlayerHands(
+	playerId: string,
+	notebook: NotebookState,
+	suggestions: Suggestion[],
+	handSizeInfo: HandSizeInfo,
+): PlayerHandAnalysis {
+	const ownedCards = getOwnedCardsForPlayer(playerId, notebook);
+	const ownedCardSet = new Set(ownedCards);
+	const possibleCards = getPossibleCardsForPlayer(playerId, notebook);
+	const unknownPossibleCards = possibleCards.filter(
+		(card) => !ownedCardSet.has(card),
+	);
+	const unresolvedConstraintSets = suggestions
+		.filter((suggestion) => suggestion.disproverPlayerId === playerId)
+		.map((suggestion) => getSuggestionCards(suggestion))
+		.map((cards) =>
+			cards.filter((card) => notebook[card][playerId] !== "impossible"),
+		)
+		.filter((cards) => !cards.some((card) => ownedCardSet.has(card)))
+		.map((cards) => cards.filter((card) => !ownedCardSet.has(card)));
+	const minUnknownCardsNeeded = Math.max(
+		0,
+		handSizeInfo.min - ownedCards.length,
+	);
+	const maxUnknownCardsAllowed = Math.min(
+		unknownPossibleCards.length,
+		Math.max(0, handSizeInfo.max - ownedCards.length),
+	);
+	const cardAppearanceCount = Object.fromEntries(
+		allCards.map((card) => [card, 0]),
+	) as Record<Card, number>;
+	let totalValidHands = 0;
+	const selectedCards: Card[] = [];
+	const selectedCardSet = new Set<Card>();
+
+	const constraintsSatisfied = () => {
+		return unresolvedConstraintSets.every((cards) =>
+			cards.some((card) => selectedCardSet.has(card)),
+		);
+	};
+
+	const recordValidHand = () => {
+		totalValidHands += 1;
+
+		for (const card of ownedCards) {
+			cardAppearanceCount[card] += 1;
+		}
+
+		for (const card of selectedCards) {
+			cardAppearanceCount[card] += 1;
+		}
+	};
+
+	const exploreHands = (startIndex: number, remainingCardsToSelect: number) => {
+		if (remainingCardsToSelect === 0) {
+			if (constraintsSatisfied()) {
+				recordValidHand();
+			}
+
+			return;
+		}
+
+		if (
+			startIndex >= unknownPossibleCards.length ||
+			unknownPossibleCards.length - startIndex < remainingCardsToSelect
+		) {
+			return;
+		}
+
+		for (
+			let cardIndex = startIndex;
+			cardIndex < unknownPossibleCards.length;
+			cardIndex += 1
+		) {
+			const card = unknownPossibleCards[cardIndex];
+			selectedCards.push(card);
+			selectedCardSet.add(card);
+			exploreHands(cardIndex + 1, remainingCardsToSelect - 1);
+			selectedCards.pop();
+			selectedCardSet.delete(card);
+		}
+	};
+
+	for (
+		let targetUnknownCardCount = minUnknownCardsNeeded;
+		targetUnknownCardCount <= maxUnknownCardsAllowed;
+		targetUnknownCardCount += 1
+	) {
+		exploreHands(0, targetUnknownCardCount);
+	}
+
+	return {
+		ownedCards,
+		possibleCards,
+		totalValidHands,
+		cardAppearanceCount,
+	};
+}
+
 export function getDeductionResult(game: DeductionGame): DeductionResult {
 	const columnKeys = getColumnKeys(game.players);
 	const resolvedNotebook = createNotebookCopy(game.notebook, columnKeys);
 	const sources = createNotebookSources(columnKeys);
 	const manualNotebook = createNotebookCopy(game.notebook, columnKeys);
 	const reasons = createNotebookReasons(columnKeys);
+	const handSizeInfo = getHandSizeInfo(game.players.length);
 
 	const steps: DeductionStep[] = [];
 	const seenStepIds = new Set<string>();
@@ -372,6 +670,13 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 							status: "owned",
 							card,
 							columnKey: possibleColumns[0],
+							evidence: createCardStatusEvidence(
+								resolvedNotebook,
+								card,
+								columnKeys,
+								"impossible",
+								possibleColumns[0],
+							),
 						})
 					) {
 						hasChanges = true;
@@ -416,6 +721,12 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 							card,
 							columnKey: envelopeColumnId,
 							category,
+							evidence: createCategoryEnvelopeEvidence(
+								resolvedNotebook,
+								categoryCards,
+								card,
+								"impossible",
+							),
 						})
 					) {
 						hasChanges = true;
@@ -446,6 +757,7 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 								playerId: player.id,
 								suggesterPlayerId: suggestion.suggesterPlayerId,
 								disproverPlayerId: suggestion.disproverPlayerId,
+								evidence: createSuggestionEvidence(suggestionNumber),
 							}
 						: {
 								id: `step:no-disprover:${suggestion.id}:${player.id}:${card}`,
@@ -456,6 +768,7 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 								suggestionNumber,
 								playerId: player.id,
 								suggesterPlayerId: suggestion.suggesterPlayerId,
+								evidence: createSuggestionEvidence(suggestionNumber),
 							};
 
 					if (applyImpossible(card, player.id, step)) {
@@ -481,6 +794,159 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 							columnKey: suggestion.disproverPlayerId,
 							suggestionNumber,
 							playerId: suggestion.disproverPlayerId,
+							evidence: createSuggestionEvidence(suggestionNumber),
+						})
+					) {
+						hasChanges = true;
+					}
+				}
+			}
+		}
+
+		for (const player of game.players) {
+			const ownedCards = getOwnedCardsForPlayer(player.id, resolvedNotebook);
+			const possibleCards = getPossibleCardsForPlayer(
+				player.id,
+				resolvedNotebook,
+			);
+
+			if (ownedCards.length > handSizeInfo.max) {
+				recordConflict({
+					id: `conflict:max-hand:${player.id}:${ownedCards.length}`,
+					kind: "playerExceedsMaxHand",
+					playerId: player.id,
+					ownedCount: ownedCards.length,
+					maxHand: handSizeInfo.max,
+				});
+			}
+
+			if (possibleCards.length < handSizeInfo.min) {
+				recordConflict({
+					id: `conflict:min-hand:${player.id}:${possibleCards.length}`,
+					kind: "playerBelowMinPossible",
+					playerId: player.id,
+					possibleCount: possibleCards.length,
+					minHand: handSizeInfo.min,
+				});
+			}
+
+			if (ownedCards.length === handSizeInfo.max) {
+				for (const card of possibleCards) {
+					if (resolvedNotebook[card][player.id] === "owned") {
+						continue;
+					}
+
+					if (
+						applyImpossible(card, player.id, {
+							id: `step:max-hand:${player.id}:${card}`,
+							rule: "playerReachedMaxHand",
+							status: "impossible",
+							card,
+							columnKey: player.id,
+							playerId: player.id,
+							handSize: handSizeInfo.max,
+							evidence: createHandSizeLimitEvidence(
+								player.id,
+								handSizeInfo.max,
+								"maxOwned",
+							),
+						})
+					) {
+						hasChanges = true;
+					}
+				}
+			}
+
+			if (possibleCards.length === handSizeInfo.min) {
+				for (const card of possibleCards) {
+					if (
+						applyOwned(card, player.id, {
+							id: `step:min-possible:${player.id}:${card}`,
+							rule: "playerReachedMinPossible",
+							status: "owned",
+							card,
+							columnKey: player.id,
+							playerId: player.id,
+							handSize: handSizeInfo.min,
+							evidence: createHandSizeLimitEvidence(
+								player.id,
+								handSizeInfo.min,
+								"minPossible",
+							),
+						})
+					) {
+						hasChanges = true;
+					}
+				}
+			}
+
+			const handAnalysis = analyzePlayerHands(
+				player.id,
+				resolvedNotebook,
+				game.suggestions,
+				handSizeInfo,
+			);
+
+			if (handAnalysis.totalValidHands === 0) {
+				recordConflict({
+					id: `conflict:no-valid-hand:${player.id}`,
+					kind: "playerHasNoValidHand",
+					playerId: player.id,
+					minHand: handSizeInfo.min,
+					maxHand: handSizeInfo.max,
+				});
+				continue;
+			}
+
+			for (const card of handAnalysis.possibleCards) {
+				const appearanceCount = handAnalysis.cardAppearanceCount[card];
+
+				if (
+					appearanceCount === handAnalysis.totalValidHands &&
+					resolvedNotebook[card][player.id] !== "owned"
+				) {
+					if (
+						applyOwned(card, player.id, {
+							id: `step:hand-force-owned:${player.id}:${card}`,
+							rule: "handRangeForcedOwned",
+							status: "owned",
+							card,
+							columnKey: player.id,
+							playerId: player.id,
+							minHand: handSizeInfo.min,
+							maxHand: handSizeInfo.max,
+							evidence: createHandRangeEvidence(
+								player.id,
+								handSizeInfo.min,
+								handSizeInfo.max,
+								handAnalysis.totalValidHands,
+							),
+						})
+					) {
+						hasChanges = true;
+					}
+				}
+
+				if (
+					appearanceCount === 0 &&
+					resolvedNotebook[card][player.id] !== "impossible"
+				) {
+					if (
+						applyImpossible(card, player.id, {
+							id: `step:hand-force-impossible:${player.id}:${card}`,
+							rule: "handRangeForcedImpossible",
+							status: "impossible",
+							card,
+							columnKey: player.id,
+							playerId: player.id,
+							minHand: handSizeInfo.min,
+							maxHand: handSizeInfo.max,
+							evidence: createHandRangeEvidence(
+								player.id,
+								handSizeInfo.min,
+								handSizeInfo.max,
+								handAnalysis.totalValidHands,
+							),
 						})
 					) {
 						hasChanges = true;

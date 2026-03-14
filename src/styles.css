@@ -531,6 +531,40 @@ a {
   padding: 1rem;
 }
 
+.deduction-anchor-target {
+  scroll-margin-top: 7rem;
+}
+
+.deduction-anchor-target:target {
+  position: relative;
+  z-index: 1;
+}
+
+.deduction-anchor-target[data-anchor='cell']:target {
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--lagoon-deep) 55%, white 45%),
+    0 0 0 8px rgba(79, 184, 178, 0.15);
+}
+
+.deduction-anchor-target[data-anchor='suggestion']:target {
+  border-color: color-mix(in oklab, var(--lagoon-deep) 46%, var(--line-strong));
+  box-shadow:
+    0 0 0 3px rgba(79, 184, 178, 0.18),
+    0 18px 34px var(--shadow-soft);
+}
+
+.deduction-evidence-link {
+  color: var(--sea-ink-soft);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+
+.deduction-evidence-link:hover {
+  color: var(--sea-ink);
+}
+
 .form-panel {
   position: relative;
   overflow: hidden;

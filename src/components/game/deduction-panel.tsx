@@ -14,6 +14,7 @@ import {
 	formatDeductionConflict,
 	formatDeductionLead,
 	formatDeductionStep,
+	getDeductionEvidenceReferences,
 } from "./deduction-copy";
 
 type DeductionPanelProps = {
@@ -128,9 +129,29 @@ export default function DeductionPanel({
 							{highlightedSteps.map((step) => (
 								<div
 									key={step.id}
-									className="setup-note text-sm leading-7 text-[var(--sea-ink-soft)]"
+									className="setup-note grid gap-2 text-sm leading-7 text-[var(--sea-ink-soft)]"
 								>
-									{formatDeductionStep(step, players, t)}
+									<p className="m-0">{formatDeductionStep(step, players, t)}</p>
+									{step.evidence?.length ? (
+										<ul className="m-0 grid gap-1 pl-5 text-xs leading-6 text-[var(--sea-ink-soft)]">
+											{getDeductionEvidenceReferences(step, players, t).map(
+												(reference) => (
+													<li key={`${step.id}:${reference.id}`}>
+														{reference.href ? (
+															<a
+																href={reference.href}
+																className="deduction-evidence-link"
+															>
+																{reference.label}
+															</a>
+														) : (
+															<span>{reference.label}</span>
+														)}
+													</li>
+												),
+											)}
+										</ul>
+									) : null}
 								</div>
 							))}
 						</div>

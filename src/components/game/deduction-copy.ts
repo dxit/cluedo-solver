@@ -3,10 +3,17 @@ import type { TFunction } from "i18next";
 import { envelopeColumnId } from "#/lib/cluedo/constants";
 import type {
 	DeductionConflict,
+	DeductionEvidence,
 	DeductionLead,
 	DeductionStep,
 } from "#/lib/cluedo/deduction";
 import type { Card, NotebookColumnKey, Player } from "#/lib/cluedo/types";
+
+export type DeductionEvidenceReference = {
+	id: string;
+	label: string;
+	href: string | null;
+};
 
 function getPlayerNameById(players: Player[]) {
 	return Object.fromEntries(players.map((player) => [player.id, player.name]));
@@ -41,6 +48,78 @@ function formatColumnList(
 	return columnKeys
 		.map((columnKey) => getColumnLabel(columnKey, players, t))
 		.join(", ");
+}
+
+function formatDeductionEvidence(
+	evidence: DeductionEvidence,
+	players: Player[],
+	t: TFunction,
+) {
+	switch (evidence.kind) {
+		case "suggestion":
+			return t("engine.evidence.suggestion", {
+				index: evidence.suggestionNumber,
+			});
+		case "cell":
+			return t("engine.evidence.cell", {
+				card: getCardLabel(evidence.card, t),
+				column: getColumnLabel(evidence.columnKey, players, t),
+				status: t(`notebook.status.${evidence.status}`),
+			});
+		case "handSizeLimit":
+			return evidence.reached === "maxOwned"
+				? t("engine.evidence.handSizeLimitMax", {
+						player: getColumnLabel(evidence.playerId, players, t),
+						handSize: evidence.handSize,
+					})
+				: t("engine.evidence.handSizeLimitMin", {
+						player: getColumnLabel(evidence.playerId, players, t),
+						handSize: evidence.handSize,
+					});
+		case "handRange":
+			return t("engine.evidence.handRange", {
+				player: getColumnLabel(evidence.playerId, players, t),
+				count: evidence.validHands,
+				minHand: evidence.minHand,
+				maxHand: evidence.maxHand,
+			});
+	}
+}
+
+function getDeductionEvidenceId(evidence: DeductionEvidence) {
+	switch (evidence.kind) {
+		case "suggestion":
+			return `suggestion:${evidence.suggestionNumber}`;
+		case "cell":
+			return `cell:${evidence.card}:${evidence.columnKey}:${evidence.status}`;
+		case "handSizeLimit":
+			return `hand-size:${evidence.playerId}:${evidence.reached}:${evidence.handSize}`;
+		case "handRange":
+			return `hand-range:${evidence.playerId}:${evidence.minHand}:${evidence.maxHand}:${evidence.validHands}`;
+	}
+}
+
+export function getSuggestionEntryAnchorId(suggestionNumber: number) {
+	return `suggestion-entry-${suggestionNumber}`;
+}
+
+export function getNotebookCellAnchorId(
+	card: Card,
+	columnKey: NotebookColumnKey,
+) {
+	return `notebook-cell-${card}-${columnKey}`;
+}
+
+function getDeductionEvidenceHref(evidence: DeductionEvidence) {
+	switch (evidence.kind) {
+		case "suggestion":
+			return `#${getSuggestionEntryAnchorId(evidence.suggestionNumber)}`;
+		case "cell":
+			return `#${getNotebookCellAnchorId(evidence.card, evidence.columnKey)}`;
+		case "handSizeLimit":
+		case "handRange":
+			return null;
+	}
 }
 
 export function formatDeductionStep(
@@ -82,6 +161,32 @@ export function formatDeductionStep(
 			return t("engine.rules.singleEnvelopeCandidate", {
 				card: getCardLabel(step.card, t),
 				category: t(`categories.${step.category}`),
+			});
+		case "playerReachedMaxHand":
+			return t("engine.rules.playerReachedMaxHand", {
+				player: getColumnLabel(step.playerId, players, t),
+				handSize: step.handSize,
+				card: getCardLabel(step.card, t),
+			});
+		case "playerReachedMinPossible":
+			return t("engine.rules.playerReachedMinPossible", {
+				player: getColumnLabel(step.playerId, players, t),
+				handSize: step.handSize,
+				card: getCardLabel(step.card, t),
+			});
+		case "handRangeForcedOwned":
+			return t("engine.rules.handRangeForcedOwned", {
+				player: getColumnLabel(step.playerId, players, t),
+				card: getCardLabel(step.card, t),
+				minHand: step.minHand,
+				maxHand: step.maxHand,
+			});
+		case "handRangeForcedImpossible":
+			return t("engine.rules.handRangeForcedImpossible", {
+				player: getColumnLabel(step.playerId, players, t),
+				card: getCardLabel(step.card, t),
+				minHand: step.minHand,
+				maxHand: step.maxHand,
 			});
 	}
 }
@@ -145,5 +250,58 @@ export function formatDeductionConflict(
 				player: getColumnLabel(conflict.playerId, players, t),
 				cards: formatCardList(conflict.cards, t),
 			});
+		case "playerExceedsMaxHand":
+			return t("engine.conflicts.playerExceedsMaxHand", {
+				player: getColumnLabel(conflict.playerId, players, t),
+				count: conflict.ownedCount,
+				maxHand: conflict.maxHand,
+			});
+		case "playerBelowMinPossible":
+			return t("engine.conflicts.playerBelowMinPossible", {
+				player: getColumnLabel(conflict.playerId, players, t),
+				count: conflict.possibleCount,
+				minHand: conflict.minHand,
+			});
+		case "playerHasNoValidHand":
+			return t("engine.conflicts.playerHasNoValidHand", {
+				player: getColumnLabel(conflict.playerId, players, t),
+				minHand: conflict.minHand,
+				maxHand: conflict.maxHand,
+			});
 	}
+}
+
+export function formatDeductionEvidenceList(
+	step: DeductionStep,
+	players: Player[],
+	t: TFunction,
+) {
+	return getDeductionEvidenceReferences(step, players, t).map(
+		(reference) => reference.label,
+	);
+}
+
+export function formatDeductionExplanation(
+	step: DeductionStep,
+	players: Player[],
+	t: TFunction,
+) {
+	return [
+		formatDeductionStep(step, players, t),
+		...formatDeductionEvidenceList(step, players, t),
+	].join("\n");
+}
+
+export function getDeductionEvidenceReferences(
+	step: DeductionStep,
+	players: Player[],
+	t: TFunction,
+): DeductionEvidenceReference[] {
+	return (
+		step.evidence?.map((evidence) => ({
+			id: getDeductionEvidenceId(evidence),
+			label: formatDeductionEvidence(evidence, players, t),
+			href: getDeductionEvidenceHref(evidence),
+		})) ?? []
+	);
 }

@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { getSuggestionEntryAnchorId } from "#/components/game/deduction-copy";
 import DeductionPanel from "#/components/game/deduction-panel";
 import NotebookTable from "#/components/game/notebook-table";
 import SuggestionForm from "#/components/game/suggestion-form";
@@ -203,7 +204,9 @@ function GamePage() {
 									return (
 										<div
 											key={suggestion.id}
-											className="setup-note history-entry-surface p-4"
+											id={getSuggestionEntryAnchorId(entryNumber)}
+											data-anchor="suggestion"
+											className="deduction-anchor-target setup-note history-entry-surface p-4"
 										>
 											<p className="m-0 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--kicker)]">
 												{t("suggestion.entry", { index: entryNumber })}

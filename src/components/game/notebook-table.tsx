@@ -6,7 +6,10 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { formatDeductionStep } from "#/components/game/deduction-copy";
+import {
+	formatDeductionExplanation,
+	getNotebookCellAnchorId,
+} from "#/components/game/deduction-copy";
 import { Button } from "#/components/ui/button";
 import { getCardCategory } from "#/lib/cluedo/cards";
 import { envelopeColumnId } from "#/lib/cluedo/constants";
@@ -99,7 +102,7 @@ function NotebookStatusButton({
 	const { t } = useTranslation();
 	const reasonTitle =
 		source === "deduced" && reason
-			? formatDeductionStep(reason, players, t)
+			? formatDeductionExplanation(reason, players, t)
 			: autoDeductionLabel;
 
 	return (
@@ -169,7 +172,11 @@ export default function NotebookTable({
 					</div>
 				),
 				cell: ({ row }) => (
-					<div className="flex justify-center">
+					<div
+						id={getNotebookCellAnchorId(row.original.card, player.id)}
+						data-anchor="cell"
+						className="deduction-anchor-target flex justify-center"
+					>
 						<NotebookStatusButton
 							card={row.original.card}
 							columnKey={player.id}
@@ -206,7 +213,11 @@ export default function NotebookTable({
 					</div>
 				),
 				cell: ({ row }) => (
-					<div className="flex justify-center">
+					<div
+						id={getNotebookCellAnchorId(row.original.card, envelopeColumnId)}
+						data-anchor="cell"
+						className="deduction-anchor-target flex justify-center"
+					>
 						<NotebookStatusButton
 							card={row.original.card}
 							columnKey={envelopeColumnId}
