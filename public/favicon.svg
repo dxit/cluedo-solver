@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="10" x2="112" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E4A51" />
+      <stop offset="0.52" stop-color="#2F6A4A" />
+      <stop offset="1" stop-color="#4FB8B2" />
+    </linearGradient>
+    <linearGradient id="glass" x1="40" y1="26" x2="86" y2="80" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8F6E7" />
+      <stop offset="1" stop-color="#D7F5EF" />
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="112" height="112" rx="30" fill="url(#bg)" />
+  <rect x="12" y="12" width="104" height="104" rx="26" stroke="#FFFFFF" stroke-opacity="0.24" stroke-width="2" />
+
+  <path
+    d="M28 34.5C28 29.8056 31.8056 26 36.5 26H67.5C72.1944 26 76 29.8056 76 34.5V50C76 54.6944 72.1944 58.5 67.5 58.5H36.5C31.8056 58.5 28 54.6944 28 50V34.5Z"
+    fill="#FFFFFF"
+    fill-opacity="0.16"
+  />
+  <path
+    d="M36 39H53"
+    stroke="#FFFFFF"
+    stroke-opacity="0.42"
+    stroke-linecap="round"
+    stroke-width="4.5"
+  />
+  <path
+    d="M36 47H48"
+    stroke="#FFFFFF"
+    stroke-opacity="0.42"
+    stroke-linecap="round"
+    stroke-width="4.5"
+  />
+
+  <circle cx="57" cy="56" r="26" stroke="url(#glass)" stroke-width="12" />
+  <path
+    d="M74.5 74.5L92 92"
+    stroke="url(#glass)"
+    stroke-linecap="round"
+    stroke-width="12"
+  />
+
+  <path
+    d="M52 48.2C52 43.723 55.723 40 60.2 40C64.4338 40 67.8 43.1477 67.8 47.1C67.8 50.1335 65.952 52.0207 63.1662 53.6547C60.4911 55.2238 59.2 56.5852 59.2 60"
+    stroke="#173A40"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="8"
+  />
+  <circle cx="59.2" cy="69.2" r="4.8" fill="#173A40" />
+</svg>
