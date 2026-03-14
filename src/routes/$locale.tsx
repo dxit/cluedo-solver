@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 
+import NotFoundPage from "#/components/NotFoundPage";
 import {
 	defaultLocale,
 	isAppLocale,
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/$locale")({
 		});
 	},
 	component: LocaleLayout,
+	notFoundComponent: NotFoundPage,
 });
 
 function LocaleLayout() {

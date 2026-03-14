@@ -10,6 +10,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "#/components/ui/card";
+import { getDeductionResult } from "#/lib/cluedo/deduction";
 import { useTranslation } from "#/lib/i18n/provider";
 import { useGameStore } from "#/stores/game-store";
 
@@ -67,6 +68,7 @@ function GamePage() {
 		game.players.map((player) => [player.id, player.name]),
 	);
 	const suggestionHistory = [...game.suggestions].reverse();
+	const deductionResult = getDeductionResult(game);
 
 	return (
 		<main className="page-wrap px-4 pb-12 pt-8">
@@ -130,12 +132,20 @@ function GamePage() {
 						<CardDescription className="text-[var(--sea-ink-soft)]">
 							{t("notebook.description")}
 						</CardDescription>
+						{deductionResult.deducedCellCount > 0 ? (
+							<p className="mt-3 text-sm font-medium text-[var(--kicker)]">
+								{t("notebook.autoHint", {
+									count: deductionResult.deducedCellCount,
+								})}
+							</p>
+						) : null}
 					</CardHeader>
 					<CardContent className="px-6 pb-6">
 						<NotebookTable
 							cards={game.cards}
 							players={game.players}
-							notebook={game.notebook}
+							notebook={deductionResult.notebook}
+							sources={deductionResult.sources}
 							onStatusChange={(card, columnKey, status) =>
 								setNotebookStatus(game.id, card, columnKey, status)
 							}

@@ -115,6 +115,8 @@ export const resources = {
 				title: "Notebook table",
 				description:
 					"Click each cell to cycle through unknown, owned, and impossible.",
+				autoHint: "Automatic deduction filled {{count}} notebook cells.",
+				autoDeduction: "Automatic deduction",
 				card: "Card",
 				envelope: "Envelope",
 				solution: "Solution",
@@ -155,6 +157,8 @@ export const resources = {
 					suggesterRequired: "Choose who made the suggestion.",
 					disproverRequired:
 						"Choose who disproved the suggestion or select nobody.",
+					disproverCannotBeSuggester:
+						"The suggester cannot disprove their own suggestion.",
 				},
 			},
 			validation: {
@@ -330,6 +334,9 @@ export const resources = {
 				title: "Tabella del taccuino",
 				description:
 					"Clicca ogni cella per alternare sconosciuto, posseduta e impossibile.",
+				autoHint:
+					"La deduzione automatica ha compilato {{count}} celle del taccuino.",
+				autoDeduction: "Deduzione automatica",
 				card: "Carta",
 				envelope: "Busta",
 				solution: "Soluzione",
@@ -371,6 +378,8 @@ export const resources = {
 					suggesterRequired: "Seleziona chi ha fatto il suggerimento.",
 					disproverRequired:
 						"Seleziona chi ha smentito il suggerimento oppure scegli nessuno.",
+					disproverCannotBeSuggester:
+						"Chi suggerisce non puo anche smentire il proprio suggerimento.",
 				},
 			},
 			validation: {
@@ -545,6 +554,9 @@ export const resources = {
 				title: "Notizbuch-Tabelle",
 				description:
 					"Klicke auf jede Zelle, um zwischen unbekannt, vorhanden und unmoglich zu wechseln.",
+				autoHint:
+					"Die automatische Deduktion hat {{count}} Notizbuchzellen ausgefullt.",
+				autoDeduction: "Automatische Deduktion",
 				card: "Karte",
 				envelope: "Umschlag",
 				solution: "Losung",
@@ -585,6 +597,8 @@ export const resources = {
 					suggesterRequired: "Wahle aus, wer den Vorschlag gemacht hat.",
 					disproverRequired:
 						"Wahle aus, wer den Vorschlag widerlegt hat, oder niemand.",
+					disproverCannotBeSuggester:
+						"Der vorschlagende Spieler kann den eigenen Vorschlag nicht widerlegen.",
 				},
 			},
 			validation: {

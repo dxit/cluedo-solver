@@ -24,14 +24,28 @@ type SuggestionFormProps = {
 function createSuggestionFormSchema(messages: {
 	suggesterRequired: string;
 	disproverRequired: string;
+	disproverCannotBeSuggester: string;
 }) {
-	return z.object({
-		suggesterPlayerId: z.string().min(1, messages.suggesterRequired),
-		suspect: z.enum(suspects),
-		weapon: z.enum(weapons),
-		room: z.enum(rooms),
-		disproverPlayerId: z.string().min(1, messages.disproverRequired),
-	});
+	return z
+		.object({
+			suggesterPlayerId: z.string().min(1, messages.suggesterRequired),
+			suspect: z.enum(suspects),
+			weapon: z.enum(weapons),
+			room: z.enum(rooms),
+			disproverPlayerId: z.string().min(1, messages.disproverRequired),
+		})
+		.superRefine((value, ctx) => {
+			if (
+				value.disproverPlayerId !== "none" &&
+				value.disproverPlayerId === value.suggesterPlayerId
+			) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: messages.disproverCannotBeSuggester,
+					path: ["disproverPlayerId"],
+				});
+			}
+		});
 }
 
 type SuggestionFormValues = {
@@ -134,6 +148,9 @@ export default function SuggestionForm({
 			createSuggestionFormSchema({
 				suggesterRequired: t("suggestion.validation.suggesterRequired"),
 				disproverRequired: t("suggestion.validation.disproverRequired"),
+				disproverCannotBeSuggester: t(
+					"suggestion.validation.disproverCannotBeSuggester",
+				),
 			}),
 		[t],
 	);
@@ -165,6 +182,29 @@ export default function SuggestionForm({
 		label: player.name,
 		value: player.id,
 	}));
+	const selectedSuggesterPlayerId = useStore(
+		form.store,
+		(state) => state.values.suggesterPlayerId,
+	);
+	const disproverOptions = useMemo(() => {
+		const suggesterIndex = players.findIndex(
+			(player) => player.id === selectedSuggesterPlayerId,
+		);
+
+		if (suggesterIndex === -1) {
+			return playerOptions;
+		}
+
+		return Array.from({ length: players.length - 1 }, (_, offset) => {
+			const playerIndex = (suggesterIndex + offset + 1) % players.length;
+			const player = players[playerIndex];
+
+			return {
+				label: player.name,
+				value: player.id,
+			};
+		});
+	}, [playerOptions, players, selectedSuggesterPlayerId]);
 
 	return (
 		<form
@@ -182,7 +222,12 @@ export default function SuggestionForm({
 						value={field.state.value}
 						placeholder={t("suggestion.suggesterPlaceholder")}
 						options={playerOptions}
-						onChange={(value) => field.handleChange(value)}
+						onChange={(value) => {
+							field.handleChange(value);
+							form.setFieldValue("disproverPlayerId", (currentValue) =>
+								currentValue === value ? "none" : currentValue,
+							);
+						}}
 						errors={field.state.meta.errors}
 						showErrors={field.state.meta.isTouched || submissionAttempts > 0}
 					/>
@@ -192,14 +237,14 @@ export default function SuggestionForm({
 			<div className="grid gap-4 md:grid-cols-3">
 				<form.Field name="suspect">
 					{(field) => (
-							<SelectField
-								label={t("suggestion.suspect")}
-								value={field.state.value}
-								placeholder={t("suggestion.suspectPlaceholder")}
-								options={suspects.map((suspect) => ({
-									label: t(`cards.${suspect}`),
-									value: suspect,
-								}))}
+						<SelectField
+							label={t("suggestion.suspect")}
+							value={field.state.value}
+							placeholder={t("suggestion.suspectPlaceholder")}
+							options={suspects.map((suspect) => ({
+								label: t(`cards.${suspect}`),
+								value: suspect,
+							}))}
 							onChange={(value) =>
 								field.handleChange(value as SuggestionFormValues["suspect"])
 							}
@@ -211,14 +256,14 @@ export default function SuggestionForm({
 
 				<form.Field name="weapon">
 					{(field) => (
-							<SelectField
-								label={t("suggestion.weapon")}
-								value={field.state.value}
-								placeholder={t("suggestion.weaponPlaceholder")}
-								options={weapons.map((weapon) => ({
-									label: t(`cards.${weapon}`),
-									value: weapon,
-								}))}
+						<SelectField
+							label={t("suggestion.weapon")}
+							value={field.state.value}
+							placeholder={t("suggestion.weaponPlaceholder")}
+							options={weapons.map((weapon) => ({
+								label: t(`cards.${weapon}`),
+								value: weapon,
+							}))}
 							onChange={(value) =>
 								field.handleChange(value as SuggestionFormValues["weapon"])
 							}
@@ -230,14 +275,14 @@ export default function SuggestionForm({
 
 				<form.Field name="room">
 					{(field) => (
-							<SelectField
-								label={t("suggestion.room")}
-								value={field.state.value}
-								placeholder={t("suggestion.roomPlaceholder")}
-								options={rooms.map((room) => ({
-									label: t(`cards.${room}`),
-									value: room,
-								}))}
+						<SelectField
+							label={t("suggestion.room")}
+							value={field.state.value}
+							placeholder={t("suggestion.roomPlaceholder")}
+							options={rooms.map((room) => ({
+								label: t(`cards.${room}`),
+								value: room,
+							}))}
 							onChange={(value) =>
 								field.handleChange(value as SuggestionFormValues["room"])
 							}
@@ -256,7 +301,7 @@ export default function SuggestionForm({
 						placeholder={t("suggestion.disproverPlaceholder")}
 						options={[
 							{ label: t("suggestion.nobody"), value: "none" },
-							...playerOptions,
+							...disproverOptions,
 						]}
 						onChange={(value) => field.handleChange(value)}
 						errors={field.state.meta.errors}

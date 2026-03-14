@@ -49,12 +49,18 @@ export type Suggestion = {
 export type SuggestionInput = Omit<Suggestion, "createdAt" | "id">;
 
 export type NotebookStatus = "owned" | "impossible" | "unknown";
+export type NotebookStatusSource = "manual" | "deduced";
 
 export type NotebookColumnKey = string;
 
 export type NotebookState = Record<
 	Card,
 	Record<NotebookColumnKey, NotebookStatus>
+>;
+
+export type NotebookSourcesState = Record<
+	Card,
+	Record<NotebookColumnKey, NotebookStatusSource>
 >;
 
 export type GameSetup = {
