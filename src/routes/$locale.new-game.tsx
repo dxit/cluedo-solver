@@ -66,7 +66,7 @@ function FieldErrors({
 	}
 
 	return (
-		<p className="mt-2 text-sm text-[rgb(132,58,48)] dark:text-[rgb(255,193,182)]">
+		<p className="mt-2 text-sm text-[var(--error-text)]">
 			{getErrorText(errors[0])}
 		</p>
 	);
@@ -214,7 +214,7 @@ function LocalizedNewGamePage({ locale }: { locale: string }) {
 									<Button
 										asChild
 										variant="outline"
-										className="w-full rounded-full bg-white/65"
+										className="soft-button-surface w-full rounded-full"
 									>
 										<a
 											href="https://github.com/dxit/cluedo-solver"
@@ -266,7 +266,7 @@ function LocalizedNewGamePage({ locale }: { locale: string }) {
 											min={minPlayers}
 											max={maxPlayers}
 											value={field.state.value}
-											className="bg-white/70"
+											className="field-surface"
 											onBlur={field.handleBlur}
 											onChange={(event) => {
 												const rawValue = Number.parseInt(
@@ -316,7 +316,7 @@ function LocalizedNewGamePage({ locale }: { locale: string }) {
 									return (
 										<form.Field key={fieldName} name={fieldName}>
 											{(field) => (
-												<div className="setup-note bg-white/45 p-4">
+												<div className="setup-note soft-note-panel p-4">
 													<Label
 														htmlFor={fieldName}
 														className="mb-2 block text-sm font-semibold text-[var(--sea-ink)]"
@@ -326,7 +326,7 @@ function LocalizedNewGamePage({ locale }: { locale: string }) {
 													<Input
 														id={fieldName}
 														value={field.state.value}
-														className="bg-white/70"
+														className="field-surface"
 														onBlur={field.handleBlur}
 														onChange={(event) =>
 															field.handleChange(event.target.value)
@@ -358,7 +358,7 @@ function LocalizedNewGamePage({ locale }: { locale: string }) {
 												field.handleChange(Number(value))
 											}
 										>
-											<SelectTrigger className="w-full bg-white/70">
+											<SelectTrigger className="field-surface w-full">
 												<SelectValue
 													placeholder={t("setup.selectYourPlayerPlaceholder")}
 												/>

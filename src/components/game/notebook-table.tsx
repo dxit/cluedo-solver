@@ -54,11 +54,11 @@ const statusLabel: Record<NotebookStatus, string> = {
 
 const statusTone: Record<NotebookStatus, string> = {
 	unknown:
-		"border-[rgba(23,58,64,0.12)] bg-white/70 text-[var(--sea-ink-soft)] hover:border-[rgba(50,143,151,0.26)] hover:bg-[rgba(79,184,178,0.12)]",
+		"border-[var(--status-unknown-border)] bg-[var(--status-unknown-bg)] text-[var(--status-unknown-text)] hover:border-[var(--status-unknown-hover-border)] hover:bg-[var(--status-unknown-hover-bg)]",
 	owned:
-		"border-[rgba(47,106,74,0.22)] bg-[rgba(47,106,74,0.14)] text-[var(--palm)] hover:bg-[rgba(47,106,74,0.2)]",
+		"border-[var(--status-owned-border)] bg-[var(--status-owned-bg)] text-[var(--status-owned-text)] hover:bg-[var(--status-owned-hover-bg)]",
 	impossible:
-		"border-[rgba(160,65,52,0.18)] bg-[rgba(160,65,52,0.12)] text-[rgb(132,58,48)] hover:bg-[rgba(160,65,52,0.16)] dark:text-[rgb(255,193,182)]",
+		"border-[var(--status-impossible-border)] bg-[var(--status-impossible-bg)] text-[var(--status-impossible-text)] hover:bg-[var(--status-impossible-hover-bg)]",
 };
 
 function getNextStatus(
@@ -242,13 +242,13 @@ export default function NotebookTable({
 		<div className="overflow-hidden rounded-[1.5rem] border border-[var(--line)]">
 			<div className="overflow-x-auto">
 				<table className="min-w-full border-separate border-spacing-0">
-					<thead className="bg-[rgba(255,255,255,0.74)]">
+					<thead className="bg-[var(--table-head-bg)]">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<tr key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
 									<th
 										key={header.id}
-										className="border-b border-[var(--line)] px-4 py-3 text-left align-middle first:sticky first:left-0 first:z-10 first:bg-[rgba(255,255,255,0.94)]"
+										className="border-b border-[var(--line)] px-4 py-3 text-left align-middle first:sticky first:left-0 first:z-10 first:bg-[var(--table-sticky-bg)]"
 									>
 										{header.isPlaceholder
 											? null
@@ -263,7 +263,7 @@ export default function NotebookTable({
 					</thead>
 					{categoryOrder.map((category) => (
 						<tbody key={category}>
-							<tr className="bg-[rgba(79,184,178,0.08)]">
+							<tr className="bg-[var(--table-group-bg)]">
 								<td
 									colSpan={columns.length}
 									className="border-b border-[var(--line)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--kicker)]"
@@ -274,12 +274,12 @@ export default function NotebookTable({
 							{rowsByCategory[category].map((row) => (
 								<tr
 									key={row.id}
-									className="bg-[rgba(255,255,255,0.44)] even:bg-[rgba(255,255,255,0.24)]"
+									className="bg-[var(--table-row-bg)] even:bg-[var(--table-row-alt-bg)]"
 								>
 									{row.getVisibleCells().map((cell) => (
 										<td
 											key={cell.id}
-											className="border-b border-[var(--line)] px-4 py-3 align-middle first:sticky first:left-0 first:bg-[color-mix(in_oklab,var(--surface-strong)_84%,white_16%)]"
+											className="border-b border-[var(--line)] px-4 py-3 align-middle first:sticky first:left-0 first:bg-[var(--table-sticky-bg)]"
 										>
 											{flexRender(
 												cell.column.columnDef.cell,

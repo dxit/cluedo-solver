@@ -86,7 +86,7 @@ function GamePage() {
 					<Button
 						asChild
 						variant="outline"
-						className="rounded-full bg-white/65"
+						className="soft-button-surface rounded-full"
 					>
 						<Link to="/$locale/new-game" params={{ locale }}>
 							{t("common.startAnotherGame")}
@@ -184,7 +184,7 @@ function GamePage() {
 						</CardHeader>
 						<CardContent className="grid gap-3 px-6 pb-6">
 							{suggestionHistory.length === 0 ? (
-								<div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-4 text-sm text-[var(--sea-ink-soft)]">
+								<div className="empty-entry-surface rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-[var(--sea-ink-soft)]">
 									{t("suggestion.empty")}
 								</div>
 							) : (
@@ -199,7 +199,7 @@ function GamePage() {
 									return (
 										<div
 											key={suggestion.id}
-											className="setup-note bg-white/55 p-4"
+											className="setup-note history-entry-surface p-4"
 										>
 											<p className="m-0 text-xs font-semibold uppercase tracking-[0.2em] text-[var(--kicker)]">
 												{t("suggestion.entry", { index: entryNumber })}

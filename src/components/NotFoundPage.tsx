@@ -22,7 +22,7 @@ export default function NotFoundPage() {
 							{t("common.goHome")}
 						</Link>
 					</Button>
-					<Button asChild variant="outline" className="bg-white/50">
+					<Button asChild variant="outline" className="soft-button-surface">
 						<a
 							href="https://github.com/dxit/cluedo-solver"
 							target="_blank"

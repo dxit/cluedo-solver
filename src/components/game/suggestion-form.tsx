@@ -85,7 +85,7 @@ function FieldErrors({
 	}
 
 	return (
-		<p className="mt-2 text-sm text-[rgb(132,58,48)] dark:text-[rgb(255,193,182)]">
+		<p className="mt-2 text-sm text-[var(--error-text)]">
 			{getErrorText(errors[0])}
 		</p>
 	);
@@ -114,7 +114,7 @@ function SelectField({
 				{label}
 			</Label>
 			<Select value={value} onValueChange={onChange}>
-				<SelectTrigger className="w-full bg-white/70">
+				<SelectTrigger className="field-surface w-full">
 					<SelectValue placeholder={placeholder} />
 				</SelectTrigger>
 				<SelectContent className="bg-background text-foreground">

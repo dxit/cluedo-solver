@@ -18,6 +18,7 @@ export default function LanguageSwitcher() {
 
 	return (
 		<div
+			role="group"
 			className="flex items-center gap-1 rounded-full border border-[var(--chip-line)] bg-[var(--chip-bg)] p-1"
 			aria-label={t("language.label")}
 		>

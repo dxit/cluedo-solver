@@ -14,7 +14,7 @@ export default function Footer() {
 					</p>
 					<p className="island-kicker mt-2">{t("footer.builtWith")}</p>
 				</div>
-				<Button asChild variant="outline" className="rounded-full bg-white/65">
+				<Button asChild variant="outline" className="soft-button-surface rounded-full">
 					<a
 						href="https://github.com/dxit/cluedo-solver"
 						target="_blank"

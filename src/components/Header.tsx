@@ -33,7 +33,7 @@ export default function Header() {
 					<Button
 						asChild
 						variant="outline"
-						className="hidden rounded-full bg-white/65 sm:inline-flex"
+						className="soft-button-surface hidden rounded-full sm:inline-flex"
 					>
 						<Link to="/$locale/new-game" params={{ locale }}>
 							{t("nav.newGame")}
@@ -42,7 +42,7 @@ export default function Header() {
 					<Button
 						asChild
 						variant="outline"
-						className="hidden rounded-full bg-white/65 sm:inline-flex"
+						className="soft-button-surface hidden rounded-full sm:inline-flex"
 					>
 						<a
 							href="https://github.com/dxit/cluedo-solver"
