@@ -1,7 +1,10 @@
 {
+  "id": "/",
   "short_name": "Cluedo Solver",
   "name": "Cluedo Solver",
   "description": "A multilingual Cluedo notebook for tracking players, cards, and suggestions.",
+  "lang": "en",
+  "dir": "ltr",
   "icons": [
     {
       "src": "android-chrome-192x192.png",
@@ -16,8 +19,13 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "categories": ["games", "productivity", "utilities"],
+  "scope": "/",
+  "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "theme_color": "#173a40",
-  "background_color": "#e7f3ec"
+  "background_color": "#e7f3ec",
+  "prefer_related_applications": false
 }

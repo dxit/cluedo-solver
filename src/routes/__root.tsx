@@ -10,6 +10,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
+import PwaRegistration from "../components/PwaRegistration";
 import { Button } from "../components/ui/button";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import TanStackQueryProvider from "../integrations/tanstack-query/root-provider";
@@ -41,6 +42,22 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			{
 				name: "theme-color",
 				content: "#173a40",
+			},
+			{
+				name: "mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-capable",
+				content: "yes",
+			},
+			{
+				name: "apple-mobile-web-app-status-bar-style",
+				content: "default",
+			},
+			{
+				name: "apple-mobile-web-app-title",
+				content: "Cluedo Solver",
 			},
 			{
 				title: "Cluedo Solver",
@@ -99,6 +116,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				suppressHydrationWarning
 				className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]"
 			>
+				<PwaRegistration />
 				<TanStackQueryProvider>
 					<AppI18nProvider>
 						<GameStoreProvider>

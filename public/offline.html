@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#173a40" />
+    <title>Cluedo Solver Offline</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #e7f3ec;
+        --surface: rgba(255, 255, 255, 0.92);
+        --line: rgba(23, 58, 64, 0.12);
+        --ink: #173a40;
+        --ink-soft: #416166;
+        --accent: #2f6a4a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Manrope, system-ui, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(1000px 520px at -10% -10%, rgba(79, 184, 178, 0.28), transparent 60%),
+          radial-gradient(900px 560px at 110% 0%, rgba(47, 106, 74, 0.16), transparent 62%),
+          linear-gradient(180deg, #f4faf6 0%, var(--bg) 100%);
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(100%, 680px);
+        border: 1px solid var(--line);
+        border-radius: 32px;
+        background: var(--surface);
+        box-shadow: 0 24px 64px rgba(15, 39, 42, 0.1);
+        padding: 32px;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 4vw, 3.4rem);
+        line-height: 0.95;
+      }
+
+      p {
+        margin: 16px 0 0;
+        color: var(--ink-soft);
+        font-size: 1rem;
+        line-height: 1.7;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 18px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        text-decoration: none;
+        background: rgba(255, 255, 255, 0.78);
+      }
+
+      a.primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Offline</p>
+      <h1>Cluedo Solver is temporarily offline.</h1>
+      <p>
+        If you have already opened the app online, previously visited notebook pages may still be available.
+        Reconnect to fetch the latest version and keep the install updated.
+      </p>
+      <div class="actions">
+        <a class="primary" href="/en/new-game">Open setup</a>
+        <a href="/">Retry connection</a>
+      </div>
+    </main>
+  </body>
+</html>
