@@ -1,8 +1,15 @@
 # Cluedo Solver
 
+[![Live Demo](https://img.shields.io/badge/live-demo-173A40?style=for-the-badge&logo=cloudflare&logoColor=white)](https://cluedo-solver.danieledematteo.workers.dev/)
+[![Verify and Deploy](https://img.shields.io/github/actions/workflow/status/dxit/cluedo-solver/cloudflare-deploy.yml?branch=main&style=for-the-badge&label=verify%20%26%20deploy)](https://github.com/dxit/cluedo-solver/actions/workflows/cloudflare-deploy.yml)
+[![Cloudflare Workers](https://img.shields.io/badge/Cloudflare-Workers-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/workers/)
+[![i18n](https://img.shields.io/badge/i18n-en%20%7C%20it%20%7C%20de-2F6A4A?style=for-the-badge)](https://cluedo-solver.danieledematteo.workers.dev/)
+
 A multilingual Cluedo notebook built with TanStack Start and prepared for Cloudflare Workers deployment.
 
 The app focuses on the part of Cluedo that players actually need help with during a match: setup, notebook tracking, and suggestion history. It already supports English, Italian, and German, and it is structured so deduction logic can be added on top of the same game state next.
+
+Live app: [cluedo-solver.danieledematteo.workers.dev](https://cluedo-solver.danieledematteo.workers.dev/)
 
 ## Highlights
 
@@ -75,12 +82,6 @@ pnpm exec wrangler login
 pnpm run deploy
 ```
 
-Notes:
-
-- The Worker name is currently set to `cluedo-solver`
-- Update `wrangler.jsonc` if you want a different Worker name
-- Attach a custom domain from the Cloudflare dashboard after the first deploy if needed
-
 ## GitHub Actions Deployment
 
 The repository now includes a deploy workflow in [cloudflare-deploy.yml](./.github/workflows/cloudflare-deploy.yml).
@@ -117,7 +118,6 @@ src
 - Implement deduction rules from notebook and suggestion history
 - Add stronger automated tests around the notebook and suggestion flow
 - Improve shareability and export options for saved notebooks
-- Add a public deployed URL to this README once the Cloudflare Worker is live
 
 ## Why This Repo Exists
 
