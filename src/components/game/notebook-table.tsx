@@ -6,13 +6,15 @@ import {
 	useReactTable,
 } from "@tanstack/react-table";
 import { useMemo } from "react";
-
+import { formatDeductionStep } from "#/components/game/deduction-copy";
 import { Button } from "#/components/ui/button";
 import { getCardCategory } from "#/lib/cluedo/cards";
 import { envelopeColumnId } from "#/lib/cluedo/constants";
+import type { DeductionReasonState } from "#/lib/cluedo/deduction";
 import type {
 	Card,
 	CardCategory,
+	NotebookColumnKey,
 	NotebookSourcesState,
 	NotebookState,
 	NotebookStatus,
@@ -27,6 +29,7 @@ type NotebookTableProps = {
 	players: Player[];
 	notebook: NotebookState;
 	sources: NotebookSourcesState;
+	reasons: DeductionReasonState;
 	onStatusChange: (
 		card: Card,
 		columnKey: string,
@@ -77,6 +80,8 @@ function NotebookStatusButton({
 	columnKey,
 	status,
 	source,
+	reason,
+	players,
 	ariaLabel,
 	autoDeductionLabel,
 	onStatusChange,
@@ -85,10 +90,18 @@ function NotebookStatusButton({
 	columnKey: string;
 	status: NotebookStatus;
 	source: NotebookStatusSource;
+	reason: DeductionReasonState[Card][NotebookColumnKey];
+	players: Player[];
 	ariaLabel: string;
 	autoDeductionLabel: string;
 	onStatusChange: NotebookTableProps["onStatusChange"];
 }) {
+	const { t } = useTranslation();
+	const reasonTitle =
+		source === "deduced" && reason
+			? formatDeductionStep(reason, players, t)
+			: autoDeductionLabel;
+
 	return (
 		<Button
 			type="button"
@@ -100,9 +113,11 @@ function NotebookStatusButton({
 				source === "deduced" &&
 					"border-dashed ring-1 ring-inset ring-[rgba(50,143,151,0.28)] after:absolute after:-right-1 after:-top-1 after:size-2.5 after:rounded-full after:bg-[var(--lagoon-deep)] after:content-['']",
 			)}
-			onClick={() => onStatusChange(card, columnKey, getNextStatus(status, source))}
+			onClick={() =>
+				onStatusChange(card, columnKey, getNextStatus(status, source))
+			}
 			aria-label={ariaLabel}
-			title={source === "deduced" ? autoDeductionLabel : undefined}
+			title={source === "deduced" ? reasonTitle : undefined}
 		>
 			{statusLabel[status]}
 		</Button>
@@ -114,6 +129,7 @@ export default function NotebookTable({
 	players,
 	notebook,
 	sources,
+	reasons,
 	onStatusChange,
 }: NotebookTableProps) {
 	const { t } = useTranslation();
@@ -159,6 +175,8 @@ export default function NotebookTable({
 							columnKey={player.id}
 							status={notebook[row.original.card]?.[player.id] ?? "unknown"}
 							source={sources[row.original.card]?.[player.id] ?? "manual"}
+							reason={reasons[row.original.card]?.[player.id] ?? null}
+							players={players}
 							ariaLabel={t("notebook.setStatus", {
 								card: t(`cards.${row.original.card}`),
 								column: player.name,
@@ -198,12 +216,15 @@ export default function NotebookTable({
 							source={
 								sources[row.original.card]?.[envelopeColumnId] ?? "manual"
 							}
+							reason={reasons[row.original.card]?.[envelopeColumnId] ?? null}
+							players={players}
 							ariaLabel={t("notebook.setStatus", {
 								card: t(`cards.${row.original.card}`),
 								column: t("notebook.envelope"),
 								status: t(
 									`notebook.status.${getNextStatus(
-										notebook[row.original.card]?.[envelopeColumnId] ?? "unknown",
+										notebook[row.original.card]?.[envelopeColumnId] ??
+											"unknown",
 										sources[row.original.card]?.[envelopeColumnId] ?? "manual",
 									)}`,
 								),
@@ -215,7 +236,7 @@ export default function NotebookTable({
 				),
 			},
 		],
-		[players, notebook, onStatusChange, sources, t],
+		[players, notebook, onStatusChange, reasons, sources, t],
 	);
 
 	const table = useReactTable({

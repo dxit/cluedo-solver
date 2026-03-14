@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import DeductionPanel from "#/components/game/deduction-panel";
 import NotebookTable from "#/components/game/notebook-table";
 import SuggestionForm from "#/components/game/suggestion-form";
 import { Button } from "#/components/ui/button";
@@ -146,6 +147,7 @@ function GamePage() {
 							players={game.players}
 							notebook={deductionResult.notebook}
 							sources={deductionResult.sources}
+							reasons={deductionResult.reasons}
 							onStatusChange={(card, columnKey, status) =>
 								setNotebookStatus(game.id, card, columnKey, status)
 							}
@@ -172,6 +174,8 @@ function GamePage() {
 							/>
 						</CardContent>
 					</Card>
+
+					<DeductionPanel players={game.players} result={deductionResult} />
 
 					<Card className="island-shell border-[var(--line)] bg-transparent py-0 shadow-none">
 						<CardHeader className="px-6 pt-6">

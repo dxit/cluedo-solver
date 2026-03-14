@@ -88,7 +88,7 @@ export const resources = {
 					"A game record with players, the full deck, an empty suggestion log, and a notebook matrix for each card.",
 				currentRulesTitle: "Current rules",
 				currentRulesBody:
-					"This first version captures setup and observations. Automated deduction can layer on top of the same store next.",
+					"Automatic deduction is already active. Add suggestions and notebook updates to let the engine cross-check the table.",
 				formTitle: "Game setup",
 				formDescription:
 					"Choose player count, name everyone at the table, then select your seat.",
@@ -103,7 +103,7 @@ export const resources = {
 				kicker: "Notebook",
 				title: "Track the table, then solve the case.",
 				description:
-					"Manual notes are live now. Deduction rules can build directly on the saved suggestions and notebook statuses next.",
+					"Manual notes and automatic deduction now work together. The engine replays suggestion history, flags conflicts, and surfaces unresolved leads.",
 				notFoundTitle: "Game not found",
 				notFoundDescription:
 					"This notebook is missing from local storage or has not been created yet.",
@@ -127,6 +127,60 @@ export const resources = {
 					unknown: "unknown",
 					owned: "owned",
 					impossible: "impossible",
+				},
+			},
+			engine: {
+				title: "Automatic deduction engine",
+				description:
+					"The solver replays your notebook and suggestion history to explain confirmed deductions, open leads, and contradictions.",
+				live: "Derived live from notebook state and suggestion history.",
+				stats: {
+					deductions: "Deductions",
+					leads: "Open leads",
+					conflicts: "Conflicts",
+				},
+				sections: {
+					conflicts: "Conflicts to resolve",
+					recent: "Recent deductions",
+					leads: "Open leads",
+				},
+				empty: {
+					noConflicts: "No contradictions detected.",
+					noDeductions:
+						"No automatic deductions yet. Add suggestions or mark known cards to unlock the engine.",
+					noLeads: "No unresolved leads right now.",
+				},
+				rules: {
+					suggestionSkippedPlayer:
+						"Entry {{index}} rules out {{player}} for {{card}} before the disprover.",
+					suggestionNoDisprover:
+						"Entry {{index}} rules out {{player}} for {{card}} because nobody disproved the suggestion.",
+					disproverSingleCandidate:
+						"Entry {{index}} leaves {{player}} with only {{card}} as a possible disproving card.",
+					singlePossibleOwnerPlayer: "Only {{player}} can still hold {{card}}.",
+					singlePossibleOwnerEnvelope:
+						"Only the envelope can still hold {{card}}.",
+					singleEnvelopeCandidate:
+						"{{card}} is the only remaining {{category}} candidate for the envelope.",
+				},
+				leads: {
+					disproverCandidates:
+						"Entry {{index}} means {{player}} must hold one of: {{cards}}.",
+				},
+				conflicts: {
+					ruleConflictImpossible:
+						"{{card}} was inferred impossible for {{column}}, but that cell is already marked owned.",
+					ruleConflictOwned:
+						"{{card}} was inferred owned by {{column}}, but that cell is already marked impossible.",
+					multipleOwners:
+						"{{card}} is marked owned in multiple places: {{columns}}.",
+					noPossibleOwner: "{{card}} has no remaining possible location.",
+					multipleEnvelopeCards:
+						"More than one {{category}} is marked in the envelope: {{cards}}.",
+					noEnvelopeCandidate:
+						"No {{category}} can still be placed in the envelope.",
+					suggestionDisproverHasNoCandidate:
+						"Entry {{index}} says {{player}} disproved the suggestion, but none of those cards can still belong to them.",
 				},
 			},
 			suggestion: {
@@ -306,7 +360,7 @@ export const resources = {
 					"Una partita con giocatori, mazzo completo, registro suggerimenti vuoto e matrice del taccuino per ogni carta.",
 				currentRulesTitle: "Regole attuali",
 				currentRulesBody:
-					"Questa prima versione raccoglie setup e osservazioni. La deduzione automatica puo essere aggiunta in seguito sullo stesso store.",
+					"La deduzione automatica e gia attiva. Aggiungi suggerimenti e aggiorna il taccuino per far controllare il tavolo al motore.",
 				formTitle: "Configurazione partita",
 				formDescription:
 					"Scegli il numero di giocatori, assegna un nome a tutti e seleziona il tuo posto.",
@@ -320,9 +374,9 @@ export const resources = {
 			},
 			game: {
 				kicker: "Taccuino",
-				title: "Segui il tavolo e risolvi il caso.",
+				title: "Segui il gioco e risolvi il caso.",
 				description:
-					"Gli appunti manuali sono gia attivi. Le regole di deduzione potranno usare direttamente suggerimenti salvati e stati del taccuino.",
+					"Appunti manuali e deduzione automatica ora lavorano insieme. Il motore rilegge la cronologia, segnala conflitti e mostra gli indizi ancora aperti.",
 				notFoundTitle: "Partita non trovata",
 				notFoundDescription:
 					"Questo taccuino non esiste nel local storage oppure non e stato ancora creato.",
@@ -349,6 +403,61 @@ export const resources = {
 					impossible: "impossibile",
 				},
 			},
+			engine: {
+				title: "Motore di deduzione automatica",
+				description:
+					"Il solver rilegge taccuino e cronologia dei suggerimenti per spiegare deduzioni confermate, indizi aperti e contraddizioni.",
+				live: "Calcolato in tempo reale da taccuino e cronologia suggerimenti.",
+				stats: {
+					deductions: "Deduzioni",
+					leads: "Indizi aperti",
+					conflicts: "Conflitti",
+				},
+				sections: {
+					conflicts: "Conflitti da risolvere",
+					recent: "Deduzioni recenti",
+					leads: "Indizi aperti",
+				},
+				empty: {
+					noConflicts: "Nessuna contraddizione rilevata.",
+					noDeductions:
+						"Nessuna deduzione automatica ancora. Aggiungi suggerimenti o marca carte note per sbloccare il motore.",
+					noLeads: "Nessun indizio aperto in questo momento.",
+				},
+				rules: {
+					suggestionSkippedPlayer:
+						"La voce {{index}} esclude {{player}} da {{card}} prima del giocatore che ha smentito.",
+					suggestionNoDisprover:
+						"La voce {{index}} esclude {{player}} da {{card}} perche nessuno ha smentito il suggerimento.",
+					disproverSingleCandidate:
+						"La voce {{index}} lascia a {{player}} solo {{card}} come possibile carta per smentire.",
+					singlePossibleOwnerPlayer:
+						"Solo {{player}} puo ancora avere {{card}}.",
+					singlePossibleOwnerEnvelope:
+						"Solo la busta puo ancora contenere {{card}}.",
+					singleEnvelopeCandidate:
+						"{{card}} e l'unico {{category}} rimasto per la busta.",
+				},
+				leads: {
+					disproverCandidates:
+						"La voce {{index}} significa che {{player}} deve avere una tra: {{cards}}.",
+				},
+				conflicts: {
+					ruleConflictImpossible:
+						"{{card}} e stata dedotta come impossibile per {{column}}, ma quella cella e gia segnata come posseduta.",
+					ruleConflictOwned:
+						"{{card}} e stata dedotta come posseduta da {{column}}, ma quella cella e gia segnata come impossibile.",
+					multipleOwners:
+						"{{card}} risulta posseduta in piu posizioni: {{columns}}.",
+					noPossibleOwner: "{{card}} non ha piu nessuna posizione possibile.",
+					multipleEnvelopeCards:
+						"Piu di un {{category}} risulta nella busta: {{cards}}.",
+					noEnvelopeCandidate:
+						"Nessun {{category}} puo piu finire nella busta.",
+					suggestionDisproverHasNoCandidate:
+						"La voce {{index}} dice che {{player}} ha smentito il suggerimento, ma nessuna di quelle carte puo piu appartenergli.",
+				},
+			},
 			suggestion: {
 				title: "Registra un suggerimento",
 				description:
@@ -359,7 +468,7 @@ export const resources = {
 					"Nessun suggerimento ancora. Aggiungi il primo dal modulo qui sopra.",
 				entry: "Voce {{index}}",
 				add: "Aggiungi suggerimento",
-				suggesterPlayer: "Giocatore che suggerisce",
+				suggesterPlayer: "È il turno di",
 				suggesterPlaceholder: "Seleziona un giocatore",
 				suspect: "Sospettato",
 				suspectPlaceholder: "Seleziona un sospettato",
@@ -401,15 +510,15 @@ export const resources = {
 				rooms: "Stanze",
 			},
 			cards: {
-				green: "Dottor Verde",
+				green: "Reverendo Green",
 				mustard: "Colonnello Mustard",
-				peacock: "Signora Pavone",
+				peacock: "Mrs Pickock",
 				plum: "Professor Plum",
 				scarlet: "Miss Scarlett",
-				white: "Signora Bianchi",
+				white: "Mrs White",
 				candlestick: "Candeliere",
 				dagger: "Pugnale",
-				leadPipe: "Spranga",
+				leadPipe: "Tubo di piombo",
 				revolver: "Rivoltella",
 				rope: "Corda",
 				wrench: "Chiave inglese",
@@ -527,7 +636,7 @@ export const resources = {
 					"Ein Spiel mit Spielern, vollem Deck, leerem Vorschlagsprotokoll und einer Notizbuchmatrix fur jede Karte.",
 				currentRulesTitle: "Aktueller Stand",
 				currentRulesBody:
-					"Diese erste Version erfasst Setup und Beobachtungen. Automatische Deduktion kann danach auf demselben Store aufbauen.",
+					"Automatische Deduktion ist bereits aktiv. Fuge Vorschlage und Notizbuch-Updates hinzu, damit die Engine den Tisch neu auswertet.",
 				formTitle: "Spielsetup",
 				formDescription:
 					"Wahle die Spielerzahl, gib allen am Tisch einen Namen und markiere deinen Platz.",
@@ -542,7 +651,7 @@ export const resources = {
 				kicker: "Notizbuch",
 				title: "Behalte den Tisch im Blick und lose den Fall.",
 				description:
-					"Manuelle Notizen funktionieren bereits. Deduktionsregeln konnen als Nächstes direkt auf den gespeicherten Vorschlagen und Notizbuchstatus aufbauen.",
+					"Manuelle Notizen und automatische Deduktion arbeiten jetzt zusammen. Die Engine liest die Vorschlagshistorie neu, meldet Konflikte und zeigt offene Spuren.",
 				notFoundTitle: "Spiel nicht gefunden",
 				notFoundDescription:
 					"Dieses Notizbuch fehlt im lokalen Speicher oder wurde noch nicht erstellt.",
@@ -567,6 +676,62 @@ export const resources = {
 					unknown: "unbekannt",
 					owned: "vorhanden",
 					impossible: "unmoglich",
+				},
+			},
+			engine: {
+				title: "Automatische Deduktions-Engine",
+				description:
+					"Der Solver liest Notizbuch und Vorschlagshistorie neu, um bestatigte Deduktionen, offene Spuren und Widerspruche zu erklaren.",
+				live: "Live aus Notizbuchstatus und Vorschlagshistorie berechnet.",
+				stats: {
+					deductions: "Deduktionen",
+					leads: "Offene Spuren",
+					conflicts: "Konflikte",
+				},
+				sections: {
+					conflicts: "Konflikte zum Auflosen",
+					recent: "Letzte Deduktionen",
+					leads: "Offene Spuren",
+				},
+				empty: {
+					noConflicts: "Keine Widerspruche erkannt.",
+					noDeductions:
+						"Noch keine automatische Deduktion. Erfasse Vorschlage oder markiere bekannte Karten, um die Engine zu aktivieren.",
+					noLeads: "Zurzeit keine offenen Spuren.",
+				},
+				rules: {
+					suggestionSkippedPlayer:
+						"Eintrag {{index}} schliesst {{player}} fur {{card}} vor dem widerlegenden Spieler aus.",
+					suggestionNoDisprover:
+						"Eintrag {{index}} schliesst {{player}} fur {{card}} aus, weil niemand den Vorschlag widerlegt hat.",
+					disproverSingleCandidate:
+						"Eintrag {{index}} lasst {{player}} nur noch {{card}} als mogliche Widerlegungskarte.",
+					singlePossibleOwnerPlayer:
+						"Nur {{player}} kann {{card}} noch besitzen.",
+					singlePossibleOwnerEnvelope:
+						"Nur der Umschlag kann {{card}} noch enthalten.",
+					singleEnvelopeCandidate:
+						"{{card}} ist der einzige verbleibende {{category}}-Kandidat fur den Umschlag.",
+				},
+				leads: {
+					disproverCandidates:
+						"Eintrag {{index}} bedeutet, dass {{player}} eine der folgenden Karten besitzen muss: {{cards}}.",
+				},
+				conflicts: {
+					ruleConflictImpossible:
+						"{{card}} wurde fur {{column}} als unmoglich abgeleitet, aber diese Zelle ist bereits als vorhanden markiert.",
+					ruleConflictOwned:
+						"{{card}} wurde {{column}} als vorhanden zugeordnet, aber diese Zelle ist bereits als unmoglich markiert.",
+					multipleOwners:
+						"{{card}} ist an mehreren Stellen als vorhanden markiert: {{columns}}.",
+					noPossibleOwner:
+						"{{card}} hat keinen moglichen verbleibenden Ort mehr.",
+					multipleEnvelopeCards:
+						"Mehr als ein {{category}} ist im Umschlag markiert: {{cards}}.",
+					noEnvelopeCandidate:
+						"Kein {{category}} kann mehr im Umschlag liegen.",
+					suggestionDisproverHasNoCandidate:
+						"Eintrag {{index}} sagt, dass {{player}} den Vorschlag widerlegt hat, aber keine dieser Karten kann noch zu dieser Person gehoren.",
 				},
 			},
 			suggestion: {
