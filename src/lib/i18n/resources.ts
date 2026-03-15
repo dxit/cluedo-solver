@@ -223,6 +223,16 @@ export const resources = {
 				title: "Log a suggestion",
 				description:
 					"Record each turn as it happens so deductions can replay the table state later.",
+				advisor: {
+					title: "Suggested next combinations",
+					description:
+						"Use the solver's current uncertainty to choose a stronger suspect, weapon, and room for your next turn.",
+					reason:
+						"Tracks {{envelopeCount}} live envelope candidates, pressures {{playerCount}} other players, and keeps {{ambiguityCount}} ownership branches in play.",
+					apply: "Use this suggestion",
+					empty:
+						"No standout suggestion right now. Add a few more notebook updates or suggestion entries first.",
+				},
 				historyTitle: "Suggestion history",
 				historyDescription: "Most recent entries appear first.",
 				empty: "No suggestions yet. Add the first one from the form above.",
@@ -534,6 +544,16 @@ export const resources = {
 				title: "Registra un suggerimento",
 				description:
 					"Salva ogni turno nel momento in cui accade, cosi la deduzione potra ricostruire lo stato del tavolo in seguito.",
+				advisor: {
+					title: "Combinazioni suggerite",
+					description:
+						"Usa l'incertezza attuale del solver per scegliere un sospettato, un'arma e una stanza migliori per il tuo prossimo turno.",
+					reason:
+						"Tiene vive {{envelopeCount}} candidate per la busta, mette pressione su {{playerCount}} altri giocatori e mantiene {{ambiguityCount}} rami di possesso ancora aperti.",
+					apply: "Usa questo suggerimento",
+					empty:
+						"Per ora non spicca nessun suggerimento. Aggiungi prima qualche aggiornamento al taccuino o qualche turno in piu.",
+				},
 				historyTitle: "Cronologia suggerimenti",
 				historyDescription: "Gli inserimenti piu recenti compaiono per primi.",
 				empty:
@@ -846,6 +866,16 @@ export const resources = {
 				title: "Vorschlag erfassen",
 				description:
 					"Halte jeden Zug direkt fest, damit die Deduktion den Tischzustand spater nachvollziehen kann.",
+				advisor: {
+					title: "Empfohlene Kombinationen",
+					description:
+						"Nutze die aktuelle Unsicherheit des Solvers, um fur deinen nachsten Zug eine starkere Person-, Waffen- und Raum-Kombination zu wahlen.",
+					reason:
+						"Behalt {{envelopeCount}} mogliche Umschlagkarten offen, setzt {{playerCount}} andere Spieler unter Druck und lasst {{ambiguityCount}} Besitz-Zweige aktiv.",
+					apply: "Diesen Vorschlag verwenden",
+					empty:
+						"Gerade sticht kein Vorschlag besonders hervor. Fuge zuerst weitere Notizbuch-Updates oder Vorschlage hinzu.",
+				},
 				historyTitle: "Vorschlagsverlauf",
 				historyDescription: "Neueste Eintrage stehen zuerst.",
 				empty: "Noch keine Vorschlage. Trage oben den ersten Vorschlag ein.",

@@ -298,6 +298,7 @@ export type DeductionResult = {
 	notebook: NotebookState;
 	sources: NotebookSourcesState;
 	reasons: DeductionReasonState;
+	supportedColumnsByCard: Record<Card, NotebookColumnKey[]>;
 	deducedCellCount: number;
 	steps: DeductionStep[];
 	leads: DeductionLead[];
@@ -1753,6 +1754,7 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 		notebook: resolvedNotebook,
 		sources,
 		reasons,
+		supportedColumnsByCard: finalGlobalAnalysis.supportedColumnsByCard,
 		deducedCellCount,
 		steps,
 		leads: [...leads.values()].sort(

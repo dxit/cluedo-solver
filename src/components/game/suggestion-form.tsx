@@ -1,5 +1,5 @@
 import { useForm, useStore } from "@tanstack/react-form";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { z } from "zod";
 
 import { Button } from "#/components/ui/button";
@@ -19,6 +19,7 @@ import type { Player, SuggestionInput } from "#/lib/cluedo/types";
 type SuggestionFormProps = {
 	players: Player[];
 	onSubmit: (suggestion: SuggestionInput) => void;
+	recommendedSuggestion?: SuggestionInput | null;
 };
 
 function createSuggestionFormSchema(messages: {
@@ -133,6 +134,7 @@ function SelectField({
 export default function SuggestionForm({
 	players,
 	onSubmit,
+	recommendedSuggestion = null,
 }: SuggestionFormProps) {
 	const { t } = useTranslation();
 	const firstPlayerId = players[0]?.id ?? "";
@@ -205,6 +207,24 @@ export default function SuggestionForm({
 			};
 		});
 	}, [playerOptions, players, selectedSuggesterPlayerId]);
+
+	useEffect(() => {
+		if (!recommendedSuggestion) {
+			return;
+		}
+
+		form.setFieldValue(
+			"suggesterPlayerId",
+			recommendedSuggestion.suggesterPlayerId,
+		);
+		form.setFieldValue("suspect", recommendedSuggestion.suspect);
+		form.setFieldValue("weapon", recommendedSuggestion.weapon);
+		form.setFieldValue("room", recommendedSuggestion.room);
+		form.setFieldValue(
+			"disproverPlayerId",
+			recommendedSuggestion.disproverPlayerId ?? "none",
+		);
+	}, [form, recommendedSuggestion]);
 
 	return (
 		<form

@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { getSuggestionEntryAnchorId } from "#/components/game/deduction-copy";
 import DeductionPanel from "#/components/game/deduction-panel";
+import NextSuggestionPanel from "#/components/game/next-suggestion-panel";
 import NotebookTable from "#/components/game/notebook-table";
 import SuggestionForm from "#/components/game/suggestion-form";
 import { Button } from "#/components/ui/button";
@@ -13,6 +15,8 @@ import {
 	CardTitle,
 } from "#/components/ui/card";
 import { getDeductionResult } from "#/lib/cluedo/deduction";
+import { getNextSuggestionRecommendations } from "#/lib/cluedo/next-suggestion";
+import type { SuggestionInput } from "#/lib/cluedo/types";
 import { useTranslation } from "#/lib/i18n/provider";
 import { useGameStore } from "#/stores/game-store";
 
@@ -25,6 +29,8 @@ function GamePage() {
 	const { t } = useTranslation();
 	const { addSuggestion, games, isHydrated, setNotebookStatus } =
 		useGameStore();
+	const [recommendedSuggestion, setRecommendedSuggestion] =
+		useState<SuggestionInput | null>(null);
 	const game = games[gameId];
 
 	if (!isHydrated) {
@@ -71,6 +77,7 @@ function GamePage() {
 	);
 	const suggestionHistory = [...game.suggestions].reverse();
 	const deductionResult = getDeductionResult(game);
+	const nextSuggestions = getNextSuggestionRecommendations(game, deductionResult);
 
 	return (
 		<main className="page-wrap px-4 pb-12 pt-8">
@@ -169,12 +176,21 @@ function GamePage() {
 						<CardContent className="px-6 pb-6">
 							<SuggestionForm
 								players={game.players}
+								recommendedSuggestion={recommendedSuggestion}
 								onSubmit={(suggestion) => {
+									setRecommendedSuggestion(null);
 									void addSuggestion(game.id, suggestion);
 								}}
 							/>
 						</CardContent>
 					</Card>
+
+					<NextSuggestionPanel
+						recommendations={nextSuggestions}
+						onApply={(suggestion) => {
+							setRecommendedSuggestion(suggestion);
+						}}
+					/>
 
 					<DeductionPanel players={game.players} result={deductionResult} />
 
