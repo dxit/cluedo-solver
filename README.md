@@ -7,9 +7,9 @@
 
 ![Cluedo Solver cover image](./.github/assets/cover-image.png)
 
-A multilingual Cluedo notebook built with TanStack Start and deployed on Cloudflare Workers.
+A multilingual Cluedo notebook and explainable deduction engine built with TanStack Start and deployed on Cloudflare Workers.
 
-Cluedo Solver focuses on the part of the board game that benefits most from software: setting up a table quickly, tracking a notebook clearly, logging suggestions turn by turn, and preparing the game state for automatic deduction.
+Cluedo Solver focuses on the part of the board game that benefits most from software: setting up a table quickly, tracking a notebook clearly, logging suggestions turn by turn, and continuously re-evaluating the game state for automatic deduction.
 
 Live app: [cluedo-solver.danieledematteo.workers.dev](https://cluedo-solver.danieledematteo.workers.dev/)
 
@@ -18,6 +18,7 @@ Live app: [cluedo-solver.danieledematteo.workers.dev](https://cluedo-solver.dani
 - Validated game setup with player count, player names, and seat selection
 - Grouped notebook table for suspects, weapons, and rooms
 - Suggestion history with disprover tracking
+- Live deduction panel with explainable steps, leads, and conflicts
 - English, Italian, and German localization
 - Local persistence for saved notebooks
 - Installable PWA with offline fallback
@@ -38,26 +39,29 @@ This version is intentionally focused on the core gameplay workflow:
 2. Enter everyone at the table
 3. Track notebook cells as known, impossible, or unknown
 4. Record each suggestion and who disproved it
+5. Review live solver output as the notebook changes
 
-The app already stores the information needed for a proper solver layer. The next major milestone is automatic deduction.
+Automatic deduction is already active in the game view. Manual notes remain editable, and the solver feeds deduced ownership and impossibility back into the notebook with visible reasoning.
 
 ## Automatic Deduction Engine
 
-The deduction engine is planned as a rule-based layer on top of the current notebook and suggestion history.
+The deduction engine is a rule-based layer on top of the notebook and suggestion history. It combines direct notebook facts, suggestion-order constraints, player hand-size bounds, and envelope rules to produce explainable deductions.
 
-Planned responsibilities:
+Current responsibilities:
 
 - infer that a disproving player owns one of the three suggested cards
 - mark intermediate players as impossible owners when they could not disprove
 - detect when a card must be in the envelope
 - turn notebook observations into stronger ownership conclusions
+- surface recent deductions, open leads, and contradictions in the UI
 
-Planned flow:
+Current flow:
 
 1. Store every suggestion as structured game data
 2. Convert each suggestion into deduction constraints
 3. Re-run deduction after notebook or suggestion updates
 4. Feed conclusions back into the notebook view
+5. Show evidence-backed deductions, leads, and conflicts alongside the notebook
 
 Example:
 
@@ -65,7 +69,19 @@ Example:
 - If Carol and Dan sit between Alice and Bob and neither can disprove, they cannot own any of those three cards
 - If every player is ruled out for a card, that card belongs to the envelope
 
-The key design goal is explainability. Manual notes stay visible, and the solver should feel transparent rather than magical.
+The key design goal is explainability. Manual notes stay visible, every deduced cell can point back to supporting evidence, and the solver should feel transparent rather than magical.
+
+## Solver Status
+
+The current solver already performs:
+
+- direct notebook propagation when a card has only one possible owner
+- skipped-player elimination from suggestion order
+- disprover candidate narrowing
+- player hand-range analysis with valid-hand counting
+- whole-table assignment checks across players plus the envelope
+
+The next major solver milestone is to lean harder on global assignment reasoning so deductions come from full-table feasibility first, with per-player hand analysis serving mainly as supporting evidence and explanation.
 
 ## Tech Stack
 
@@ -140,7 +156,8 @@ src
 
 ## Roadmap
 
-- Implement the first deduction pass from suggestion history
+- Make whole-table assignment reasoning the primary deduction layer
+- Add scenario-based tests for global solver edge cases and contradictions
 - Add stronger automated tests around notebook and suggestion flows
 - Improve shareability and export options for saved notebooks
-- Add richer solver explanations in the UI once deductions are computed
+- Refine solver copy and evidence presentation around global reasoning

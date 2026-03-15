@@ -40,6 +40,10 @@ function formatCardList(cards: Card[], t: TFunction) {
 	return cards.map((card) => getCardLabel(card, t)).join(", ");
 }
 
+function formatSuggestionNumberList(suggestionNumbers: number[]) {
+	return suggestionNumbers.join(", ");
+}
+
 function formatColumnList(
 	columnKeys: NotebookColumnKey[],
 	players: Player[],
@@ -83,6 +87,11 @@ function formatDeductionEvidence(
 				minHand: evidence.minHand,
 				maxHand: evidence.maxHand,
 			});
+		case "globalSupport":
+			return t("engine.evidence.globalSupport", {
+				card: getCardLabel(evidence.card, t),
+				columns: formatColumnList(evidence.columnKeys, players, t),
+			});
 	}
 }
 
@@ -96,6 +105,8 @@ function getDeductionEvidenceId(evidence: DeductionEvidence) {
 			return `hand-size:${evidence.playerId}:${evidence.reached}:${evidence.handSize}`;
 		case "handRange":
 			return `hand-range:${evidence.playerId}:${evidence.minHand}:${evidence.maxHand}:${evidence.validHands}`;
+		case "globalSupport":
+			return `global-support:${evidence.card}:${evidence.columnKeys.join(",")}`;
 	}
 }
 
@@ -118,6 +129,7 @@ function getDeductionEvidenceHref(evidence: DeductionEvidence) {
 			return `#${getNotebookCellAnchorId(evidence.card, evidence.columnKey)}`;
 		case "handSizeLimit":
 		case "handRange":
+		case "globalSupport":
 			return null;
 	}
 }
@@ -188,6 +200,22 @@ export function formatDeductionStep(
 				minHand: step.minHand,
 				maxHand: step.maxHand,
 			});
+		case "globalAssignmentOwned":
+			if (step.columnKey === envelopeColumnId) {
+				return t("engine.rules.globalAssignmentOwnedEnvelope", {
+					card: getCardLabel(step.card, t),
+				});
+			}
+
+			return t("engine.rules.globalAssignmentOwnedPlayer", {
+				player: getColumnLabel(step.columnKey, players, t),
+				card: getCardLabel(step.card, t),
+			});
+		case "globalAssignmentImpossible":
+			return t("engine.rules.globalAssignmentImpossible", {
+				column: getColumnLabel(step.columnKey, players, t),
+				card: getCardLabel(step.card, t),
+			});
 	}
 }
 
@@ -202,6 +230,15 @@ export function formatDeductionLead(
 				index: lead.suggestionNumber,
 				player: getColumnLabel(lead.playerId, players, t),
 				cards: formatCardList(lead.cards, t),
+			});
+		case "playerHandRange":
+			return t("engine.leads.playerHandRange", {
+				entries: formatSuggestionNumberList(lead.suggestionNumbers),
+				player: getColumnLabel(lead.playerId, players, t),
+				cards: formatCardList(lead.cards, t),
+				count: lead.validHands,
+				minHand: lead.minHand,
+				maxHand: lead.maxHand,
 			});
 	}
 }
@@ -268,7 +305,31 @@ export function formatDeductionConflict(
 				minHand: conflict.minHand,
 				maxHand: conflict.maxHand,
 			});
+		case "noGlobalAssignment":
+			return t("engine.conflicts.noGlobalAssignment");
 	}
+}
+
+export function getDeductionEvidenceReferencesFromList(
+	evidence: DeductionEvidence[] | undefined,
+	players: Player[],
+	t: TFunction,
+): DeductionEvidenceReference[] {
+	return (
+		evidence?.map((item) => ({
+			id: getDeductionEvidenceId(item),
+			label: formatDeductionEvidence(item, players, t),
+			href: getDeductionEvidenceHref(item),
+		})) ?? []
+	);
+}
+
+export function getDeductionEvidenceReferences(
+	step: DeductionStep,
+	players: Player[],
+	t: TFunction,
+) {
+	return getDeductionEvidenceReferencesFromList(step.evidence, players, t);
 }
 
 export function formatDeductionEvidenceList(
@@ -290,18 +351,4 @@ export function formatDeductionExplanation(
 		formatDeductionStep(step, players, t),
 		...formatDeductionEvidenceList(step, players, t),
 	].join("\n");
-}
-
-export function getDeductionEvidenceReferences(
-	step: DeductionStep,
-	players: Player[],
-	t: TFunction,
-): DeductionEvidenceReference[] {
-	return (
-		step.evidence?.map((evidence) => ({
-			id: getDeductionEvidenceId(evidence),
-			label: formatDeductionEvidence(evidence, players, t),
-			href: getDeductionEvidenceHref(evidence),
-		})) ?? []
-	);
 }

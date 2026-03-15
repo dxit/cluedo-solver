@@ -555,14 +555,15 @@ a {
 }
 
 .deduction-evidence-link {
-  color: var(--sea-ink-soft);
+  color: currentColor;
+  opacity: 0.88;
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.22em;
 }
 
 .deduction-evidence-link:hover {
-  color: var(--sea-ink);
+  opacity: 1;
 }
 
 .form-panel {

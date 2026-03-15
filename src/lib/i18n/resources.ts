@@ -170,6 +170,12 @@ export const resources = {
 						"Across every valid hand for {{player}} ({{minHand}}-{{maxHand}} cards), {{card}} is always present.",
 					handRangeForcedImpossible:
 						"Across every valid hand for {{player}} ({{minHand}}-{{maxHand}} cards), {{card}} is never present.",
+					globalAssignmentOwnedPlayer:
+						"Across all valid full-table assignments, {{player}} must hold {{card}}.",
+					globalAssignmentOwnedEnvelope:
+						"Across all valid full-table assignments, the envelope must hold {{card}}.",
+					globalAssignmentImpossible:
+						"Across all valid full-table assignments, {{column}} cannot hold {{card}}.",
 				},
 				evidence: {
 					suggestion: "Based on suggestion entry {{index}}.",
@@ -180,10 +186,14 @@ export const resources = {
 						"{{player}} must still account for {{handSize}} cards.",
 					handRange:
 						"{{player}} has {{count}} valid hands left within the {{minHand}}-{{maxHand}} card range.",
+					globalSupport:
+						"Across the remaining valid table assignments, {{card}} only fits in: {{columns}}.",
 				},
 				leads: {
 					disproverCandidates:
 						"Entry {{index}} means {{player}} must hold one of: {{cards}}.",
+					playerHandRange:
+						"Entries {{entries}} narrow {{player}} to {{cards}} across {{count}} valid hands within the {{minHand}}-{{maxHand}} card range.",
 				},
 				conflicts: {
 					ruleConflictImpossible:
@@ -205,6 +215,8 @@ export const resources = {
 						"{{player}} can only still hold {{count}} possible cards, but must have at least {{minHand}}.",
 					playerHasNoValidHand:
 						"No valid hand remains for {{player}} within the {{minHand}}-{{maxHand}} card range.",
+					noGlobalAssignment:
+						"No complete table assignment satisfies the current notebook, hand sizes, and suggestion history.",
 				},
 			},
 			suggestion: {
@@ -469,6 +481,12 @@ export const resources = {
 						"In ogni mano valida per {{player}} (da {{minHand}} a {{maxHand}} carte), {{card}} compare sempre.",
 					handRangeForcedImpossible:
 						"In ogni mano valida per {{player}} (da {{minHand}} a {{maxHand}} carte), {{card}} non compare mai.",
+					globalAssignmentOwnedPlayer:
+						"In tutti gli assetti validi del tavolo, {{player}} deve avere {{card}}.",
+					globalAssignmentOwnedEnvelope:
+						"In tutti gli assetti validi del tavolo, la busta deve contenere {{card}}.",
+					globalAssignmentImpossible:
+						"In tutti gli assetti validi del tavolo, {{column}} non puo avere {{card}}.",
 				},
 				evidence: {
 					suggestion: "Basato sul turno {{index}}.",
@@ -479,10 +497,14 @@ export const resources = {
 						"{{player}} deve ancora coprire {{handSize}} carte.",
 					handRange:
 						"{{player}} ha ancora {{count}} mani valide nell'intervallo di {{minHand}}-{{maxHand}} carte.",
+					globalSupport:
+						"Negli assetti validi rimasti del tavolo, {{card}} puo stare solo in: {{columns}}.",
 				},
 				leads: {
 					disproverCandidates:
 						"Il turno {{index}} significa che {{player}} deve avere una tra: {{cards}}.",
+					playerHandRange:
+						"I turni {{entries}} restringono {{player}} a {{cards}} attraverso {{count}} mani valide nell'intervallo di {{minHand}}-{{maxHand}} carte.",
 				},
 				conflicts: {
 					ruleConflictImpossible:
@@ -504,6 +526,8 @@ export const resources = {
 						"{{player}} puo ancora avere solo {{count}} carte possibili, ma deve averne almeno {{minHand}}.",
 					playerHasNoValidHand:
 						"Non esiste piu nessuna mano valida per {{player}} nell'intervallo {{minHand}}-{{maxHand}} carte.",
+					noGlobalAssignment:
+						"Nessun assetto completo del tavolo soddisfa il taccuino attuale, le dimensioni delle mani e la cronologia dei suggerimenti.",
 				},
 			},
 			suggestion: {
@@ -560,7 +584,7 @@ export const resources = {
 			cards: {
 				green: "Reverendo Green",
 				mustard: "Colonnello Mustard",
-				peacock: "Mrs Pickock",
+				peacock: "Signora Peacock",
 				plum: "Professor Plum",
 				scarlet: "Miss Scarlett",
 				white: "Mrs White",
@@ -768,6 +792,12 @@ export const resources = {
 						"In jeder gultigen Hand fur {{player}} ({{minHand}}-{{maxHand}} Karten) ist {{card}} immer enthalten.",
 					handRangeForcedImpossible:
 						"In jeder gultigen Hand fur {{player}} ({{minHand}}-{{maxHand}} Karten) kommt {{card}} nie vor.",
+					globalAssignmentOwnedPlayer:
+						"In allen gultigen Gesamtzuordnungen muss {{player}} {{card}} besitzen.",
+					globalAssignmentOwnedEnvelope:
+						"In allen gultigen Gesamtzuordnungen muss der Umschlag {{card}} enthalten.",
+					globalAssignmentImpossible:
+						"In allen gultigen Gesamtzuordnungen kann {{column}} {{card}} nicht besitzen.",
 				},
 				evidence: {
 					suggestion: "Basiert auf Eintrag {{index}}.",
@@ -778,10 +808,14 @@ export const resources = {
 						"{{player}} muss noch {{handSize}} Karten abdecken.",
 					handRange:
 						"{{player}} hat noch {{count}} gultige Hande im Bereich von {{minHand}} bis {{maxHand}} Karten.",
+					globalSupport:
+						"In den verbleibenden gultigen Gesamtzuordnungen passt {{card}} nur noch zu: {{columns}}.",
 				},
 				leads: {
 					disproverCandidates:
 						"Eintrag {{index}} bedeutet, dass {{player}} eine der folgenden Karten besitzen muss: {{cards}}.",
+					playerHandRange:
+						"Die Eintrage {{entries}} begrenzen {{player}} auf {{cards}} bei {{count}} gultigen Handen im Bereich von {{minHand}} bis {{maxHand}} Karten.",
 				},
 				conflicts: {
 					ruleConflictImpossible:
@@ -804,6 +838,8 @@ export const resources = {
 						"{{player}} kann nur noch {{count}} mogliche Karten halten, braucht aber mindestens {{minHand}}.",
 					playerHasNoValidHand:
 						"Fur {{player}} bleibt keine gultige Hand mehr im Bereich von {{minHand}} bis {{maxHand}} Karten.",
+					noGlobalAssignment:
+						"Keine vollstandige Tischzuordnung erfullt das aktuelle Notizbuch, die HandgroBen und den Vorschlagsverlauf.",
 				},
 			},
 			suggestion: {

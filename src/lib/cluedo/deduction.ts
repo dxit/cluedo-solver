@@ -1,4 +1,4 @@
-import { allCards, cardsByCategory } from "./cards";
+import { allCards, cardsByCategory, getCardCategory } from "./cards";
 import { envelopeColumnId } from "./constants";
 
 import type {
@@ -22,11 +22,36 @@ type HandSizeInfo = {
 	exact: number | null;
 };
 
+type UnresolvedSuggestionConstraint = {
+	suggestionNumber: number;
+	cards: Card[];
+};
+
 type PlayerHandAnalysis = {
 	ownedCards: Card[];
 	possibleCards: Card[];
+	candidateCards: Card[];
 	totalValidHands: number;
 	cardAppearanceCount: Record<Card, number>;
+	unresolvedConstraints: UnresolvedSuggestionConstraint[];
+};
+
+type GlobalAssignmentConstraint = {
+	suggestionNumber: number;
+	playerIndex: number;
+	cardIndices: number[];
+};
+
+type GlobalAssignmentState = {
+	assignedMask: number;
+	playerCounts: number[];
+	envelopeMask: number;
+	satisfiedMask: bigint;
+};
+
+type GlobalAssignmentAnalysis = {
+	hasSolution: boolean;
+	supportedColumnsByCard: Record<Card, NotebookColumnKey[]>;
 };
 
 export type DeductionEvidence =
@@ -52,6 +77,11 @@ export type DeductionEvidence =
 			minHand: number;
 			maxHand: number;
 			validHands: number;
+	  }
+	| {
+			kind: "globalSupport";
+			card: Card;
+			columnKeys: NotebookColumnKey[];
 	  };
 
 export type DeductionStep =
@@ -146,15 +176,42 @@ export type DeductionStep =
 			minHand: number;
 			maxHand: number;
 			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			rule: "globalAssignmentOwned";
+			status: "owned";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			rule: "globalAssignmentImpossible";
+			status: "impossible";
+			card: Card;
+			columnKey: NotebookColumnKey;
+			evidence?: DeductionEvidence[];
 	  };
 
-export type DeductionLead = {
-	id: string;
-	kind: "disproverCandidates";
-	suggestionNumber: number;
-	playerId: string;
-	cards: Card[];
-};
+export type DeductionLead =
+	| {
+			id: string;
+			kind: "disproverCandidates";
+			suggestionNumber: number;
+			playerId: string;
+			cards: Card[];
+	  }
+	| {
+			id: string;
+			kind: "playerHandRange";
+			playerId: string;
+			suggestionNumbers: number[];
+			cards: Card[];
+			validHands: number;
+			minHand: number;
+			maxHand: number;
+	  };
 
 export type DeductionConflict =
 	| {
@@ -166,28 +223,33 @@ export type DeductionConflict =
 			existingStatus: DeducedNotebookStatus;
 			rule: DeductionStep["rule"];
 			suggestionNumber?: number;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
 			kind: "cardHasMultipleOwners";
 			card: Card;
 			columnKeys: NotebookColumnKey[];
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
 			kind: "cardHasNoPossibleOwner";
 			card: Card;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
 			kind: "multipleEnvelopeCardsInCategory";
 			category: CardCategory;
 			cards: Card[];
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
 			kind: "noEnvelopeCandidateInCategory";
 			category: CardCategory;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -195,6 +257,7 @@ export type DeductionConflict =
 			suggestionNumber: number;
 			playerId: string;
 			cards: Card[];
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -202,6 +265,7 @@ export type DeductionConflict =
 			playerId: string;
 			ownedCount: number;
 			maxHand: number;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -209,6 +273,7 @@ export type DeductionConflict =
 			playerId: string;
 			possibleCount: number;
 			minHand: number;
+			evidence?: DeductionEvidence[];
 	  }
 	| {
 			id: string;
@@ -216,6 +281,12 @@ export type DeductionConflict =
 			playerId: string;
 			minHand: number;
 			maxHand: number;
+			evidence?: DeductionEvidence[];
+	  }
+	| {
+			id: string;
+			kind: "noGlobalAssignment";
+			evidence?: DeductionEvidence[];
 	  };
 
 export type DeductionReasonState = Record<
@@ -284,6 +355,15 @@ function createNotebookReasons(columnKeys: NotebookColumnKey[]) {
 	) as DeductionReasonState;
 }
 
+function createSupportedColumnsByCard() {
+	return Object.fromEntries(
+		allCards.map(
+			(card) =>
+				[card, [] as NotebookColumnKey[]] satisfies [Card, NotebookColumnKey[]],
+		),
+	) as Record<Card, NotebookColumnKey[]>;
+}
+
 function getOrderedPlayersAfter(players: Player[], startPlayerId: string) {
 	const startIndex = players.findIndex((player) => player.id === startPlayerId);
 
@@ -347,6 +427,15 @@ function createRuleConflict(
 		existingStatus,
 		rule: step.rule,
 		suggestionNumber: getStepSuggestionNumber(step),
+		evidence: [
+			...(step.evidence ?? []),
+			{
+				kind: "cell",
+				card,
+				columnKey,
+				status: existingStatus,
+			},
+		],
 	};
 }
 
@@ -416,6 +505,38 @@ function createHandRangeEvidence(
 	];
 }
 
+function createGlobalSupportEvidence(
+	card: Card,
+	columnKeys: NotebookColumnKey[],
+): DeductionEvidence[] {
+	return [{ kind: "globalSupport", card, columnKeys }];
+}
+
+function createPlayerStatusEvidence(
+	notebook: NotebookState,
+	playerId: string,
+	status: DeducedNotebookStatus,
+	cards: readonly Card[] = allCards,
+): DeductionEvidence[] {
+	return cards
+		.filter((card) => notebook[card][playerId] === status)
+		.map((card) => ({
+			kind: "cell" as const,
+			card,
+			columnKey: playerId,
+			status,
+		}));
+}
+
+function getLeadSortValue(lead: DeductionLead) {
+	switch (lead.kind) {
+		case "disproverCandidates":
+			return lead.suggestionNumber;
+		case "playerHandRange":
+			return Math.max(...lead.suggestionNumbers);
+	}
+}
+
 function getOwnedCardsForPlayer(
 	playerId: string,
 	notebook: NotebookState,
@@ -442,14 +563,24 @@ function analyzePlayerHands(
 	const unknownPossibleCards = possibleCards.filter(
 		(card) => !ownedCardSet.has(card),
 	);
-	const unresolvedConstraintSets = suggestions
-		.filter((suggestion) => suggestion.disproverPlayerId === playerId)
-		.map((suggestion) => getSuggestionCards(suggestion))
-		.map((cards) =>
-			cards.filter((card) => notebook[card][playerId] !== "impossible"),
+	const unresolvedConstraints = suggestions
+		.flatMap((suggestion, index) =>
+			suggestion.disproverPlayerId === playerId
+				? [
+						{
+							suggestionNumber: index + 1,
+							cards: getSuggestionCards(suggestion).filter(
+								(card) => notebook[card][playerId] !== "impossible",
+							),
+						},
+					]
+				: [],
 		)
-		.filter((cards) => !cards.some((card) => ownedCardSet.has(card)))
-		.map((cards) => cards.filter((card) => !ownedCardSet.has(card)));
+		.filter(({ cards }) => !cards.some((card) => ownedCardSet.has(card)))
+		.map(({ suggestionNumber, cards }) => ({
+			suggestionNumber,
+			cards: cards.filter((card) => !ownedCardSet.has(card)),
+		}));
 	const minUnknownCardsNeeded = Math.max(
 		0,
 		handSizeInfo.min - ownedCards.length,
@@ -466,7 +597,7 @@ function analyzePlayerHands(
 	const selectedCardSet = new Set<Card>();
 
 	const constraintsSatisfied = () => {
-		return unresolvedConstraintSets.every((cards) =>
+		return unresolvedConstraints.every(({ cards }) =>
 			cards.some((card) => selectedCardSet.has(card)),
 		);
 	};
@@ -521,11 +652,411 @@ function analyzePlayerHands(
 		exploreHands(0, targetUnknownCardCount);
 	}
 
+	const candidateCards = unknownPossibleCards.filter(
+		(card) => cardAppearanceCount[card] > 0,
+	);
+
 	return {
 		ownedCards,
 		possibleCards,
+		candidateCards,
 		totalValidHands,
 		cardAppearanceCount,
+		unresolvedConstraints,
+	};
+}
+
+function getCategoryIndex(category: CardCategory) {
+	switch (category) {
+		case "suspect":
+			return 0;
+		case "weapon":
+			return 1;
+		case "room":
+			return 2;
+	}
+}
+
+function createGlobalAssignmentAnalysis(
+	notebook: NotebookState,
+	players: Player[],
+	suggestions: Suggestion[],
+	columnKeys: NotebookColumnKey[],
+	handSizeInfo: HandSizeInfo,
+): GlobalAssignmentAnalysis {
+	const supportedColumnsByCard = createSupportedColumnsByCard();
+	const envelopeIndex = columnKeys.indexOf(envelopeColumnId);
+	const playerIndexById = Object.fromEntries(
+		players.map((player, index) => [player.id, index]),
+	) as Record<string, number>;
+	const cardIndexByCard = Object.fromEntries(
+		allCards.map((card, index) => [card, index]),
+	) as Record<Card, number>;
+	const categoryIndexByCard = allCards.map((card) =>
+		getCategoryIndex(getCardCategory(card)),
+	);
+	const domainByCardIndex = allCards.map((card) =>
+		columnKeys.flatMap((columnKey, columnIndex) =>
+			notebook[card][columnKey] !== "impossible" ? [columnIndex] : [],
+		),
+	);
+	const fixedOwnerByCardIndex = allCards.map((card) => {
+		const ownedColumns = columnKeys.flatMap((columnKey, columnIndex) =>
+			notebook[card][columnKey] === "owned" ? [columnIndex] : [],
+		);
+
+		if (ownedColumns.length > 1) {
+			return -1;
+		}
+
+		return ownedColumns[0] ?? null;
+	});
+
+	if (
+		domainByCardIndex.some((domain) => domain.length === 0) ||
+		fixedOwnerByCardIndex.some((ownerIndex) => ownerIndex === -1)
+	) {
+		return {
+			hasSolution: false,
+			supportedColumnsByCard,
+		};
+	}
+
+	const constraints: GlobalAssignmentConstraint[] = [];
+	const constraintIndicesByCardIndex = Array.from(
+		{ length: allCards.length },
+		() => [] as number[],
+	);
+
+	for (const [index, suggestion] of suggestions.entries()) {
+		if (!suggestion.disproverPlayerId) {
+			continue;
+		}
+
+		const playerIndex = playerIndexById[suggestion.disproverPlayerId];
+
+		if (playerIndex === undefined) {
+			continue;
+		}
+
+		const cardIndices = getSuggestionCards(suggestion)
+			.map((card) => cardIndexByCard[card])
+			.filter((cardIndex) =>
+				domainByCardIndex[cardIndex].includes(playerIndex),
+			);
+
+		if (cardIndices.length === 0) {
+			return {
+				hasSolution: false,
+				supportedColumnsByCard,
+			};
+		}
+
+		const constraintIndex = constraints.length;
+		constraintIndicesByCardIndex.forEach((_, cardIndex) => {
+			if (cardIndices.includes(cardIndex)) {
+				constraintIndicesByCardIndex[cardIndex].push(constraintIndex);
+			}
+		});
+		constraints.push({
+			suggestionNumber: index + 1,
+			playerIndex,
+			cardIndices,
+		});
+	}
+
+	const fullAssignedMask = (1 << allCards.length) - 1;
+	const memo = new Map<string, boolean>();
+
+	const isConstraintSatisfied = (mask: bigint, constraintIndex: number) => {
+		return (mask & (1n << BigInt(constraintIndex))) !== 0n;
+	};
+
+	const canAssignToOwner = (
+		state: GlobalAssignmentState,
+		cardIndex: number,
+		ownerIndex: number,
+	) => {
+		if (!domainByCardIndex[cardIndex].includes(ownerIndex)) {
+			return false;
+		}
+
+		if (ownerIndex === envelopeIndex) {
+			const categoryBit = 1 << categoryIndexByCard[cardIndex];
+			return (state.envelopeMask & categoryBit) === 0;
+		}
+
+		return state.playerCounts[ownerIndex] < handSizeInfo.max;
+	};
+
+	const applyAssignmentToState = (
+		state: GlobalAssignmentState,
+		cardIndex: number,
+		ownerIndex: number,
+	): GlobalAssignmentState | null => {
+		const cardBit = 1 << cardIndex;
+
+		if (
+			(state.assignedMask & cardBit) !== 0 ||
+			!canAssignToOwner(state, cardIndex, ownerIndex)
+		) {
+			return null;
+		}
+
+		const nextState: GlobalAssignmentState = {
+			assignedMask: state.assignedMask | cardBit,
+			playerCounts: [...state.playerCounts],
+			envelopeMask: state.envelopeMask,
+			satisfiedMask: state.satisfiedMask,
+		};
+
+		if (ownerIndex === envelopeIndex) {
+			nextState.envelopeMask |= 1 << categoryIndexByCard[cardIndex];
+		} else {
+			nextState.playerCounts[ownerIndex] += 1;
+
+			if (nextState.playerCounts[ownerIndex] > handSizeInfo.max) {
+				return null;
+			}
+		}
+
+		for (const constraintIndex of constraintIndicesByCardIndex[cardIndex]) {
+			const constraint = constraints[constraintIndex];
+
+			if (constraint.playerIndex === ownerIndex) {
+				nextState.satisfiedMask |= 1n << BigInt(constraintIndex);
+			}
+		}
+
+		return nextState;
+	};
+
+	const isStateFeasible = (state: GlobalAssignmentState) => {
+		for (const [playerIndex] of players.entries()) {
+			if (state.playerCounts[playerIndex] > handSizeInfo.max) {
+				return false;
+			}
+
+			let remainingPossibleCards = 0;
+
+			for (const [cardIndex, domain] of domainByCardIndex.entries()) {
+				if ((state.assignedMask & (1 << cardIndex)) !== 0) {
+					continue;
+				}
+
+				if (domain.includes(playerIndex)) {
+					remainingPossibleCards += 1;
+				}
+			}
+
+			if (
+				state.playerCounts[playerIndex] + remainingPossibleCards <
+				handSizeInfo.min
+			) {
+				return false;
+			}
+		}
+
+		for (const [category, categoryCards] of Object.entries(cardsByCategory) as [
+			CardCategory,
+			readonly Card[],
+		][]) {
+			const categoryBit = 1 << getCategoryIndex(category);
+
+			if ((state.envelopeMask & categoryBit) !== 0) {
+				continue;
+			}
+
+			const hasRemainingEnvelopeCandidate = categoryCards.some((card) => {
+				const cardIndex = cardIndexByCard[card];
+				return (
+					(state.assignedMask & (1 << cardIndex)) === 0 &&
+					domainByCardIndex[cardIndex].includes(envelopeIndex)
+				);
+			});
+
+			if (!hasRemainingEnvelopeCandidate) {
+				return false;
+			}
+		}
+
+		for (const [constraintIndex, constraint] of constraints.entries()) {
+			if (isConstraintSatisfied(state.satisfiedMask, constraintIndex)) {
+				continue;
+			}
+
+			if (state.playerCounts[constraint.playerIndex] >= handSizeInfo.max) {
+				return false;
+			}
+
+			const hasRemainingCandidate = constraint.cardIndices.some(
+				(cardIndex) => (state.assignedMask & (1 << cardIndex)) === 0,
+			);
+
+			if (!hasRemainingCandidate) {
+				return false;
+			}
+		}
+
+		return true;
+	};
+
+	const getStateKey = (state: GlobalAssignmentState) => {
+		return [
+			state.assignedMask,
+			state.envelopeMask,
+			state.playerCounts.join(","),
+			state.satisfiedMask.toString(),
+		].join("|");
+	};
+
+	const hasFeasibleCompletion = (state: GlobalAssignmentState): boolean => {
+		const stateKey = getStateKey(state);
+		const cached = memo.get(stateKey);
+
+		if (cached !== undefined) {
+			return cached;
+		}
+
+		if (!isStateFeasible(state)) {
+			memo.set(stateKey, false);
+			return false;
+		}
+
+		if (state.assignedMask === fullAssignedMask) {
+			const allPlayersSatisfied = state.playerCounts.every(
+				(count) => count >= handSizeInfo.min && count <= handSizeInfo.max,
+			);
+			const allEnvelopeCategoriesSatisfied = state.envelopeMask === 0b111;
+			const allConstraintsSatisfied = constraints.every((_, constraintIndex) =>
+				isConstraintSatisfied(state.satisfiedMask, constraintIndex),
+			);
+			const result =
+				allPlayersSatisfied &&
+				allEnvelopeCategoriesSatisfied &&
+				allConstraintsSatisfied;
+
+			memo.set(stateKey, result);
+			return result;
+		}
+
+		let nextCardIndex = -1;
+		let nextOwners: number[] = [];
+
+		for (const [cardIndex] of allCards.entries()) {
+			if ((state.assignedMask & (1 << cardIndex)) !== 0) {
+				continue;
+			}
+
+			const feasibleOwners = domainByCardIndex[cardIndex].filter((ownerIndex) =>
+				canAssignToOwner(state, cardIndex, ownerIndex),
+			);
+
+			if (feasibleOwners.length === 0) {
+				memo.set(stateKey, false);
+				return false;
+			}
+
+			if (nextCardIndex === -1 || feasibleOwners.length < nextOwners.length) {
+				nextCardIndex = cardIndex;
+				nextOwners = feasibleOwners;
+
+				if (feasibleOwners.length === 1) {
+					break;
+				}
+			}
+		}
+
+		for (const ownerIndex of nextOwners) {
+			const nextState = applyAssignmentToState(
+				state,
+				nextCardIndex,
+				ownerIndex,
+			);
+
+			if (nextState && hasFeasibleCompletion(nextState)) {
+				memo.set(stateKey, true);
+				return true;
+			}
+		}
+
+		memo.set(stateKey, false);
+		return false;
+	};
+
+	let initialState: GlobalAssignmentState = {
+		assignedMask: 0,
+		playerCounts: Array.from({ length: players.length }, () => 0),
+		envelopeMask: 0,
+		satisfiedMask: 0n,
+	};
+
+	for (const [constraintIndex, constraint] of constraints.entries()) {
+		const fixedToPlayer = constraint.cardIndices.some(
+			(cardIndex) =>
+				fixedOwnerByCardIndex[cardIndex] === constraint.playerIndex,
+		);
+
+		if (fixedToPlayer) {
+			initialState = {
+				...initialState,
+				satisfiedMask:
+					initialState.satisfiedMask | (1n << BigInt(constraintIndex)),
+			};
+		}
+	}
+
+	for (const [cardIndex, ownerIndex] of fixedOwnerByCardIndex.entries()) {
+		if (ownerIndex === null) {
+			continue;
+		}
+
+		const nextState = applyAssignmentToState(
+			initialState,
+			cardIndex,
+			ownerIndex,
+		);
+
+		if (!nextState) {
+			return {
+				hasSolution: false,
+				supportedColumnsByCard,
+			};
+		}
+
+		initialState = nextState;
+	}
+
+	if (!hasFeasibleCompletion(initialState)) {
+		return {
+			hasSolution: false,
+			supportedColumnsByCard,
+		};
+	}
+
+	for (const [cardIndex, card] of allCards.entries()) {
+		const fixedOwnerIndex = fixedOwnerByCardIndex[cardIndex];
+
+		if (fixedOwnerIndex !== null) {
+			supportedColumnsByCard[card] = [columnKeys[fixedOwnerIndex]];
+			continue;
+		}
+
+		supportedColumnsByCard[card] = domainByCardIndex[cardIndex]
+			.filter((ownerIndex) => {
+				const nextState = applyAssignmentToState(
+					initialState,
+					cardIndex,
+					ownerIndex,
+				);
+				return nextState ? hasFeasibleCompletion(nextState) : false;
+			})
+			.map((ownerIndex) => columnKeys[ownerIndex]);
+	}
+
+	return {
+		hasSolution: true,
+		supportedColumnsByCard,
 	};
 }
 
@@ -637,6 +1168,62 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 		}
 
 		return changed;
+	};
+
+	const runGlobalAssignmentPass = () => {
+		const globalAnalysis = createGlobalAssignmentAnalysis(
+			resolvedNotebook,
+			game.players,
+			game.suggestions,
+			columnKeys,
+			handSizeInfo,
+		);
+
+		if (!globalAnalysis.hasSolution) {
+			return false;
+		}
+
+		let globalChanged = false;
+
+		for (const card of allCards) {
+			const supportedColumns = globalAnalysis.supportedColumnsByCard[card];
+
+			for (const columnKey of columnKeys) {
+				if (supportedColumns.includes(columnKey)) {
+					continue;
+				}
+
+				if (
+					applyImpossible(card, columnKey, {
+						id: `step:global-impossible:${card}:${columnKey}:${supportedColumns.join(",")}`,
+						rule: "globalAssignmentImpossible",
+						status: "impossible",
+						card,
+						columnKey,
+						evidence: createGlobalSupportEvidence(card, supportedColumns),
+					})
+				) {
+					globalChanged = true;
+				}
+			}
+
+			if (supportedColumns.length === 1) {
+				if (
+					applyOwned(card, supportedColumns[0], {
+						id: `step:global-owned:${card}:${supportedColumns[0]}`,
+						rule: "globalAssignmentOwned",
+						status: "owned",
+						card,
+						columnKey: supportedColumns[0],
+						evidence: createGlobalSupportEvidence(card, supportedColumns),
+					})
+				) {
+					globalChanged = true;
+				}
+			}
+		}
+
+		return globalChanged;
 	};
 
 	let hasChanges = false;
@@ -817,6 +1404,11 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 					playerId: player.id,
 					ownedCount: ownedCards.length,
 					maxHand: handSizeInfo.max,
+					evidence: createPlayerStatusEvidence(
+						resolvedNotebook,
+						player.id,
+						"owned",
+					),
 				});
 			}
 
@@ -827,6 +1419,11 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 					playerId: player.id,
 					possibleCount: possibleCards.length,
 					minHand: handSizeInfo.min,
+					evidence: createPlayerStatusEvidence(
+						resolvedNotebook,
+						player.id,
+						"impossible",
+					),
 				});
 			}
 
@@ -894,6 +1491,20 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 					playerId: player.id,
 					minHand: handSizeInfo.min,
 					maxHand: handSizeInfo.max,
+					evidence: [
+						...createHandRangeEvidence(
+							player.id,
+							handSizeInfo.min,
+							handSizeInfo.max,
+							0,
+						),
+						...handAnalysis.unresolvedConstraints.map(
+							({ suggestionNumber }) => ({
+								kind: "suggestion" as const,
+								suggestionNumber,
+							}),
+						),
+					],
 				});
 				continue;
 			}
@@ -954,6 +1565,9 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				}
 			}
 		}
+		if (!hasChanges && runGlobalAssignmentPass()) {
+			hasChanges = true;
+		}
 	} while (hasChanges && passCount < 50);
 
 	for (const card of allCards) {
@@ -970,6 +1584,12 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				kind: "cardHasMultipleOwners",
 				card,
 				columnKeys: ownedColumns,
+				evidence: createCardStatusEvidence(
+					resolvedNotebook,
+					card,
+					columnKeys,
+					"owned",
+				),
 			});
 		}
 
@@ -978,6 +1598,12 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				id: `conflict:no-owner:${card}`,
 				kind: "cardHasNoPossibleOwner",
 				card,
+				evidence: createCardStatusEvidence(
+					resolvedNotebook,
+					card,
+					columnKeys,
+					"impossible",
+				),
 			});
 		}
 	}
@@ -999,6 +1625,12 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				kind: "multipleEnvelopeCardsInCategory",
 				category,
 				cards: envelopeOwnedCards,
+				evidence: envelopeOwnedCards.map((card) => ({
+					kind: "cell" as const,
+					card,
+					columnKey: envelopeColumnId,
+					status: "owned" as const,
+				})),
 			});
 		}
 
@@ -1007,6 +1639,12 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				id: `conflict:no-envelope:${category}`,
 				kind: "noEnvelopeCandidateInCategory",
 				category,
+				evidence: categoryCards.map((card) => ({
+					kind: "cell" as const,
+					card,
+					columnKey: envelopeColumnId,
+					status: "impossible" as const,
+				})),
 			});
 		}
 	}
@@ -1031,6 +1669,15 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				suggestionNumber,
 				playerId: suggestion.disproverPlayerId,
 				cards: suggestionCards,
+				evidence: [
+					...createSuggestionEvidence(suggestionNumber),
+					...createPlayerStatusEvidence(
+						resolvedNotebook,
+						suggestion.disproverPlayerId,
+						"impossible",
+						suggestionCards,
+					),
+				],
 			});
 			continue;
 		}
@@ -1044,6 +1691,51 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 				cards: candidateCards,
 			});
 		}
+	}
+
+	for (const player of game.players) {
+		const handAnalysis = analyzePlayerHands(
+			player.id,
+			resolvedNotebook,
+			game.suggestions,
+			handSizeInfo,
+		);
+
+		if (
+			handAnalysis.totalValidHands <= 1 ||
+			handAnalysis.unresolvedConstraints.length <= 1 ||
+			handAnalysis.candidateCards.length === 0
+		) {
+			continue;
+		}
+
+		leads.set(`lead:hand-range:${player.id}`, {
+			id: `lead:hand-range:${player.id}`,
+			kind: "playerHandRange",
+			playerId: player.id,
+			suggestionNumbers: handAnalysis.unresolvedConstraints.map(
+				({ suggestionNumber }) => suggestionNumber,
+			),
+			cards: handAnalysis.candidateCards,
+			validHands: handAnalysis.totalValidHands,
+			minHand: handSizeInfo.min,
+			maxHand: handSizeInfo.max,
+		});
+	}
+
+	const finalGlobalAnalysis = createGlobalAssignmentAnalysis(
+		resolvedNotebook,
+		game.players,
+		game.suggestions,
+		columnKeys,
+		handSizeInfo,
+	);
+
+	if (!finalGlobalAnalysis.hasSolution) {
+		recordConflict({
+			id: "conflict:no-global-assignment",
+			kind: "noGlobalAssignment",
+		});
 	}
 
 	const deducedCellCount = allCards.reduce((total, card) => {
@@ -1064,7 +1756,7 @@ export function getDeductionResult(game: DeductionGame): DeductionResult {
 		deducedCellCount,
 		steps,
 		leads: [...leads.values()].sort(
-			(left, right) => right.suggestionNumber - left.suggestionNumber,
+			(left, right) => getLeadSortValue(right) - getLeadSortValue(left),
 		),
 		conflicts: [...conflicts.values()],
 	};

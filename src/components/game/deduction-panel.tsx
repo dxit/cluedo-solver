@@ -15,6 +15,7 @@ import {
 	formatDeductionLead,
 	formatDeductionStep,
 	getDeductionEvidenceReferences,
+	getDeductionEvidenceReferencesFromList,
 } from "./deduction-copy";
 
 type DeductionPanelProps = {
@@ -101,9 +102,33 @@ export default function DeductionPanel({
 							{visibleConflicts.map((conflict) => (
 								<div
 									key={conflict.id}
-									className="rounded-2xl border border-[var(--status-impossible-border)] bg-[var(--status-impossible-bg)] p-4 text-sm leading-7 text-[var(--status-impossible-text)]"
+									className="grid gap-2 rounded-2xl border border-[var(--status-impossible-border)] bg-[var(--status-impossible-bg)] p-4 text-sm leading-7 text-[var(--status-impossible-text)]"
 								>
-									{formatDeductionConflict(conflict, players, t)}
+									<p className="m-0">
+										{formatDeductionConflict(conflict, players, t)}
+									</p>
+									{conflict.evidence?.length ? (
+										<ul className="m-0 grid gap-1 pl-5 text-xs leading-6 text-[var(--status-impossible-text)]">
+											{getDeductionEvidenceReferencesFromList(
+												conflict.evidence,
+												players,
+												t,
+											).map((reference) => (
+												<li key={`${conflict.id}:${reference.id}`}>
+													{reference.href ? (
+														<a
+															href={reference.href}
+															className="deduction-evidence-link"
+														>
+															{reference.label}
+														</a>
+													) : (
+														<span>{reference.label}</span>
+													)}
+												</li>
+											))}
+										</ul>
+									) : null}
 								</div>
 							))}
 						</div>
