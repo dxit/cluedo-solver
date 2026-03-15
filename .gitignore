@@ -2,8 +2,11 @@ node_modules
 .DS_Store
 dist
 dist-ssr
+storybook-static
+coverage
 *.local
 .env
+.env.*
 .nitro
 .tanstack
 .wrangler
@@ -11,3 +14,9 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+.vscode/
+.idea/
+.cursor/
+.cursorrules
+.windsurfrules
+.zed/
