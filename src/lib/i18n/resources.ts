@@ -235,6 +235,7 @@ export const resources = {
 				},
 				historyTitle: "Suggestion history",
 				historyDescription: "Most recent entries appear first.",
+				undoLast: "Undo last suggestion",
 				empty: "No suggestions yet. Add the first one from the form above.",
 				entry: "Entry {{index}}",
 				add: "Add suggestion",
@@ -259,6 +260,12 @@ export const resources = {
 						"Choose who disproved the suggestion or select nobody.",
 					disproverCannotBeSuggester:
 						"The suggester cannot disprove their own suggestion.",
+				},
+				feedback: {
+					added:
+						"Suggestion added: {{suspect}}, {{weapon}}, {{room}}.",
+					reverted:
+						"Last suggestion removed: {{suspect}}, {{weapon}}, {{room}}.",
 				},
 			},
 			validation: {
@@ -556,6 +563,7 @@ export const resources = {
 				},
 				historyTitle: "Cronologia suggerimenti",
 				historyDescription: "Gli inserimenti piu recenti compaiono per primi.",
+				undoLast: "Annulla ultimo suggerimento",
 				empty:
 					"Nessun suggerimento ancora. Aggiungi il primo dal modulo qui sopra.",
 				entry: "Turno {{index}}",
@@ -581,6 +589,12 @@ export const resources = {
 						"Seleziona chi ha smentito il suggerimento oppure scegli nessuno.",
 					disproverCannotBeSuggester:
 						"Chi suggerisce non puo anche smentire il proprio suggerimento.",
+				},
+				feedback: {
+					added:
+						"Suggerimento aggiunto: {{suspect}}, {{weapon}}, {{room}}.",
+					reverted:
+						"Ultimo suggerimento rimosso: {{suspect}}, {{weapon}}, {{room}}.",
 				},
 			},
 			validation: {
@@ -620,7 +634,7 @@ export const resources = {
 				diningRoom: "Sala da pranzo",
 				billiardRoom: "Sala del biliardo",
 				library: "Biblioteca",
-				lounge: "Salotto",
+				lounge: "Serra",
 				hall: "Anticamera",
 				study: "Studio",
 			},
@@ -878,6 +892,7 @@ export const resources = {
 				},
 				historyTitle: "Vorschlagsverlauf",
 				historyDescription: "Neueste Eintrage stehen zuerst.",
+				undoLast: "Letzten Vorschlag ruckgangig machen",
 				empty: "Noch keine Vorschlage. Trage oben den ersten Vorschlag ein.",
 				entry: "Eintrag {{index}}",
 				add: "Vorschlag hinzufugen",
@@ -902,6 +917,12 @@ export const resources = {
 						"Wahle aus, wer den Vorschlag widerlegt hat, oder niemand.",
 					disproverCannotBeSuggester:
 						"Der vorschlagende Spieler kann den eigenen Vorschlag nicht widerlegen.",
+				},
+				feedback: {
+					added:
+						"Vorschlag hinzugefugt: {{suspect}}, {{weapon}}, {{room}}.",
+					reverted:
+						"Letzter Vorschlag entfernt: {{suspect}}, {{weapon}}, {{room}}.",
 				},
 			},
 			validation: {

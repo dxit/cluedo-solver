@@ -57,6 +57,18 @@ type SuggestionFormValues = {
 	disproverPlayerId: string;
 };
 
+function getNextPlayerId(players: Player[], currentPlayerId: string) {
+	const currentPlayerIndex = players.findIndex(
+		(player) => player.id === currentPlayerId,
+	);
+
+	if (currentPlayerIndex === -1) {
+		return players[0]?.id ?? "";
+	}
+
+	return players[(currentPlayerIndex + 1) % players.length]?.id ?? "";
+}
+
 function getErrorText(error: unknown) {
 	if (typeof error === "string") {
 		return error;
@@ -162,18 +174,21 @@ export default function SuggestionForm({
 		validators: {
 			onSubmit: suggestionFormSchema,
 		},
-		onSubmit: ({ value }) => {
-			onSubmit({
-				suggesterPlayerId: value.suggesterPlayerId,
+			onSubmit: ({ value }) => {
+				onSubmit({
+					suggesterPlayerId: value.suggesterPlayerId,
 				suspect: value.suspect,
 				weapon: value.weapon,
 				room: value.room,
-				disproverPlayerId:
-					value.disproverPlayerId === "none" ? null : value.disproverPlayerId,
-			});
-			form.reset(initialValues);
-		},
-	});
+					disproverPlayerId:
+						value.disproverPlayerId === "none" ? null : value.disproverPlayerId,
+				});
+				form.reset({
+					...initialValues,
+					suggesterPlayerId: getNextPlayerId(players, value.suggesterPlayerId),
+				});
+			},
+		});
 
 	const submissionAttempts = useStore(
 		form.store,

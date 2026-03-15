@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getSuggestionEntryAnchorId } from "#/components/game/deduction-copy";
 import DeductionPanel from "#/components/game/deduction-panel";
@@ -27,11 +27,35 @@ export const Route = createFileRoute("/$locale/game/$gameId")({
 function GamePage() {
 	const { gameId, locale } = Route.useParams();
 	const { t } = useTranslation();
-	const { addSuggestion, games, isHydrated, setNotebookStatus } =
+	const {
+		addSuggestion,
+		games,
+		isHydrated,
+		removeLastSuggestion,
+		setNotebookStatus,
+	} =
 		useGameStore();
 	const [recommendedSuggestion, setRecommendedSuggestion] =
 		useState<SuggestionInput | null>(null);
+	const [suggestionFeedback, setSuggestionFeedback] = useState<string | null>(
+		null,
+	);
+	const suggestionCardRef = useRef<HTMLDivElement | null>(null);
 	const game = games[gameId];
+
+	useEffect(() => {
+		if (!suggestionFeedback) {
+			return;
+		}
+
+		const timeoutId = window.setTimeout(() => {
+			setSuggestionFeedback(null);
+		}, 2600);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, [suggestionFeedback]);
 
 	if (!isHydrated) {
 		return (
@@ -78,6 +102,18 @@ function GamePage() {
 	const suggestionHistory = [...game.suggestions].reverse();
 	const deductionResult = getDeductionResult(game);
 	const nextSuggestions = getNextSuggestionRecommendations(game, deductionResult);
+
+	const formatSuggestionFeedback = (key: "added" | "reverted", suggestion: {
+		suspect: SuggestionInput["suspect"];
+		weapon: SuggestionInput["weapon"];
+		room: SuggestionInput["room"];
+	}) => {
+		return t(`suggestion.feedback.${key}`, {
+			suspect: t(`cards.${suggestion.suspect}`),
+			weapon: t(`cards.${suggestion.weapon}`),
+			room: t(`cards.${suggestion.room}`),
+		});
+	};
 
 	return (
 		<main className="page-wrap px-4 pb-12 pt-8">
@@ -163,8 +199,11 @@ function GamePage() {
 					</CardContent>
 				</Card>
 
-				<div className="grid gap-6">
-					<Card className="island-shell border-[var(--line)] bg-transparent py-0 shadow-none">
+					<div className="grid gap-6">
+						<Card
+							ref={suggestionCardRef}
+							className="island-shell border-[var(--line)] bg-transparent py-0 shadow-none"
+						>
 						<CardHeader className="px-6 pt-6">
 							<CardTitle className="text-2xl text-[var(--sea-ink)]">
 								{t("suggestion.title")}
@@ -174,12 +213,27 @@ function GamePage() {
 							</CardDescription>
 						</CardHeader>
 						<CardContent className="px-6 pb-6">
+							{suggestionFeedback ? (
+								<div
+									role="status"
+									aria-live="polite"
+									className="mb-4 rounded-2xl border border-[var(--status-owned-border)] bg-[var(--status-owned-bg)] px-4 py-3 text-sm font-medium text-[var(--status-owned-text)] shadow-sm"
+								>
+									{suggestionFeedback}
+								</div>
+							) : null}
 							<SuggestionForm
 								players={game.players}
 								recommendedSuggestion={recommendedSuggestion}
 								onSubmit={(suggestion) => {
+									const nextSuggestion = addSuggestion(game.id, suggestion);
 									setRecommendedSuggestion(null);
-									void addSuggestion(game.id, suggestion);
+
+									if (nextSuggestion) {
+										setSuggestionFeedback(
+											formatSuggestionFeedback("added", nextSuggestion),
+										);
+									}
 								}}
 							/>
 						</CardContent>
@@ -189,6 +243,10 @@ function GamePage() {
 						recommendations={nextSuggestions}
 						onApply={(suggestion) => {
 							setRecommendedSuggestion(suggestion);
+							suggestionCardRef.current?.scrollIntoView({
+								behavior: "smooth",
+								block: "start",
+							});
 						}}
 					/>
 
@@ -196,9 +254,32 @@ function GamePage() {
 
 					<Card className="island-shell border-[var(--line)] bg-transparent py-0 shadow-none">
 						<CardHeader className="px-6 pt-6">
-							<CardTitle className="text-2xl text-[var(--sea-ink)]">
-								{t("suggestion.historyTitle")}
-							</CardTitle>
+							<div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+								<CardTitle className="text-2xl text-[var(--sea-ink)]">
+									{t("suggestion.historyTitle")}
+								</CardTitle>
+								<Button
+									type="button"
+									variant="outline"
+									size="sm"
+									className="soft-button-surface"
+									disabled={game.suggestions.length === 0}
+									onClick={() => {
+										const removedSuggestion = removeLastSuggestion(game.id);
+
+										if (removedSuggestion) {
+											setSuggestionFeedback(
+												formatSuggestionFeedback(
+													"reverted",
+													removedSuggestion,
+												),
+											);
+										}
+									}}
+								>
+									{t("suggestion.undoLast")}
+								</Button>
+							</div>
 							<CardDescription className="text-[var(--sea-ink-soft)]">
 								{t("suggestion.historyDescription")}
 							</CardDescription>

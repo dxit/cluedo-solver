@@ -32,6 +32,7 @@ type GameStoreContextValue = {
 		gameId: string,
 		suggestion: SuggestionInput,
 	) => Suggestion | null;
+	removeLastSuggestion: (gameId: string) => Suggestion | null;
 	setNotebookStatus: (
 		gameId: string,
 		card: Card,
@@ -165,6 +166,32 @@ export function GameStoreProvider({ children }: PropsWithChildren) {
 		return wasAdded ? nextSuggestion : null;
 	};
 
+	const removeLastSuggestion = (gameId: string) => {
+		let removedSuggestion: Suggestion | null = null;
+
+		startTransition(() => {
+			setGames((currentGames) => {
+				const game = currentGames[gameId];
+
+				if (!game || game.suggestions.length === 0) {
+					return currentGames;
+				}
+
+				removedSuggestion = game.suggestions.at(-1) ?? null;
+
+				return {
+					...currentGames,
+					[gameId]: {
+						...game,
+						suggestions: game.suggestions.slice(0, -1),
+					},
+				};
+			});
+		});
+
+		return removedSuggestion;
+	};
+
 	const setNotebookStatus: GameStoreContextValue["setNotebookStatus"] = (
 		gameId,
 		card,
@@ -205,11 +232,12 @@ export function GameStoreProvider({ children }: PropsWithChildren) {
 		{
 			value: {
 				games,
-				isHydrated,
-				createGame,
-				addSuggestion,
-				setNotebookStatus,
-			},
+					isHydrated,
+					createGame,
+					addSuggestion,
+					removeLastSuggestion,
+					setNotebookStatus,
+				},
 		},
 		children,
 	);
